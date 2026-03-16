@@ -70,7 +70,11 @@ export default function App() {
         <Route path="/events"      element={session ? <Events    profile={profile} /> : <Navigate to="/auth" />} />
         <Route path="/profile/:id" element={session ? <Profile   profile={profile} /> : <Navigate to="/auth" />} />
         <Route path="/settings"    element={session ? <Settings  profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
-        <Route path="/admin"        element={session ? <Admin profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/admin" element={
+          session && profile?.id === '28b4a02f-8849-4f0c-ba16-531438f3e1ae'
+            ? <Admin profile={profile} />
+            : <Navigate to="/dashboard" />
+        } />
       </Routes>
     </BrowserRouter>
   )

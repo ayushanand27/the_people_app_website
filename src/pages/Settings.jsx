@@ -316,7 +316,7 @@ export default function Settings({ profile, setProfile }) {
         </button>
 
         {/* ADMIN PANEL LINK — only show for you */}
-        {profile?.id && (
+        {profile?.id === '28b4a02f-8849-4f0c-ba16-531438f3e1ae' && (
           <button onClick={() => navigate('/admin')} style={{
             width: '100%', display: 'flex', alignItems: 'center',
             justifyContent: 'center', gap: 8,
