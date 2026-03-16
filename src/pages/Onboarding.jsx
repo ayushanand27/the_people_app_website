@@ -14,24 +14,23 @@ const CITIES = [
   'Kolkata', 'Pune', 'Jaipur', 'Ahmedabad', 'Surat', 'Other'
 ]
 
-export default function Onboarding({ profile, setProfile }) {
-  const navigate  = useNavigate()
-  const [step,       setStep]       = useState(1)
-  const [fullName,   setFullName]   = useState(profile?.full_name || '')
-  const [username,   setUsername]   = useState('')
-  const [bio,        setBio]        = useState('')
-  const [city,       setCity]       = useState('')
-  const [interests,  setInterests]  = useState([])
-  const [loading,    setLoading]    = useState(false)
-  const [error,      setError]      = useState('')
+const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 
-  function toggleInterest(interest) {
+export default function Onboarding({ profile, setProfile }) {
+  const navigate = useNavigate()
+  const [step,      setStep]      = useState(1)
+  const [fullName,  setFullName]  = useState(profile?.full_name || '')
+  const [username,  setUsername]  = useState('')
+  const [bio,       setBio]       = useState('')
+  const [city,      setCity]      = useState('')
+  const [interests, setInterests] = useState([])
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState('')
+
+  function toggleInterest(x) {
     setInterests(prev =>
-      prev.includes(interest)
-        ? prev.filter(i => i !== interest)
-        : prev.length < 5
-          ? [...prev, interest]
-          : prev
+      prev.includes(x) ? prev.filter(i => i !== x)
+      : prev.length < 5 ? [...prev, x] : prev
     )
   }
 
@@ -42,173 +41,209 @@ export default function Onboarding({ profile, setProfile }) {
     }
     setLoading(true)
     setError('')
-
     const { data: { user } } = await supabase.auth.getUser()
-
-    const { data, error: err } = await supabase
-      .from('profiles')
+    const { data, error: err } = await supabase.from('profiles')
       .update({
-        full_name:            fullName,
-        username:             username.toLowerCase().replace(/\s/g, ''),
-        bio,
-        city,
-        interests,
-        onboarding_complete:  true
+        full_name: fullName,
+        username: username.toLowerCase().replace(/\s/g, ''),
+        bio, city, interests,
+        onboarding_complete: true
       })
-      .eq('id', user.id)
-      .select()
-      .single()
-
-    if (err) {
-      setError(err.message)
-      setLoading(false)
-      return
-    }
-
+      .eq('id', user.id).select().single()
+    if (err) { setError(err.message); setLoading(false); return }
     setProfile(data)
     navigate('/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-pink-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
+    <div style={{
+      minHeight: '100vh', background: '#FFF0F5',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16
+    }}>
+      <div style={{ width: '100%', maxWidth: 520 }}>
 
         {/* PROGRESS BAR */}
-        <div className="flex gap-2 mb-8">
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {[1,2,3].map(s => (
-            <div key={s} className={`flex-1 h-3 rounded-full border-2 border-gray-900 transition-all ${step >= s ? 'bg-pink-400' : 'bg-white'}`}/>
+            <div key={s} style={{
+              flex: 1, height: 12, borderRadius: 50,
+              border: '2.5px solid #1C1C3A',
+              background: step >= s ? '#FF85B3' : 'white',
+              boxShadow: step >= s ? '2px 2px 0 #1C1C3A' : 'none',
+              transition: 'all 0.3s'
+            }} />
           ))}
         </div>
 
-        <div className="bg-white border-4 border-gray-900 rounded-3xl p-8 shadow-[6px_6px_0px_#1C1C3A]">
+        <div style={{
+          background: 'white', border: '3px solid #1C1C3A',
+          borderRadius: 24, padding: 32,
+          boxShadow: '7px 7px 0 #1C1C3A'
+        }}>
 
-          {/* STEP 1 — NAME + USERNAME */}
+          {/* STEP 1 */}
           {step === 1 && (
             <div>
-              <h2 className="text-2xl font-black mb-2">Tell us about you 👋</h2>
-              <p className="text-gray-500 mb-6">This is how people will find you</p>
+              <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>Tell us about you 👋</div>
+              <div style={{ color: '#888', fontSize: 15, marginBottom: 24 }}>This is how people will find you</div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="font-bold text-sm mb-1 block">Full Name</label>
-                  <input
-                    type="text"
-                    placeholder="Your name"
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    className="w-full border-3 border-gray-900 rounded-2xl px-4 py-3 bg-pink-50 font-medium focus:outline-none focus:border-pink-400 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-sm mb-1 block">Username</label>
-                  <input
-                    type="text"
-                    placeholder="@yourname"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    className="w-full border-3 border-gray-900 rounded-2xl px-4 py-3 bg-pink-50 font-medium focus:outline-none focus:border-pink-400 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-sm mb-1 block">Bio <span className="text-gray-400 font-normal">(optional)</span></label>
-                  <textarea
-                    placeholder="Tell people who you are..."
-                    value={bio}
-                    onChange={e => setBio(e.target.value)}
-                    rows={3}
-                    className="w-full border-3 border-gray-900 rounded-2xl px-4 py-3 bg-pink-50 font-medium focus:outline-none focus:border-pink-400 transition-all resize-none"
-                  />
-                </div>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Full Name</div>
+                <input
+                  type="text" placeholder="Your full name"
+                  value={fullName} onChange={e => setFullName(e.target.value)}
+                  style={{
+                    width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
+                    padding: '14px 20px', fontSize: 15, fontWeight: 600,
+                    background: '#FFF0F5', outline: 'none', fontFamily: 'inherit',
+                    boxSizing: 'border-box'
+                  }}
+                />
               </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Username</div>
+                <input
+                  type="text" placeholder="@yourname"
+                  value={username} onChange={e => setUsername(e.target.value)}
+                  style={{
+                    width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
+                    padding: '14px 20px', fontSize: 15, fontWeight: 600,
+                    background: '#FFF0F5', outline: 'none', fontFamily: 'inherit',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
+                  Bio <span style={{ color: '#aaa', fontWeight: 400 }}>(optional)</span>
+                </div>
+                <textarea
+                  placeholder="Tell people who you are..."
+                  value={bio} onChange={e => setBio(e.target.value)}
+                  rows={3}
+                  style={{
+                    width: '100%', border: '3px solid #1C1C3A', borderRadius: 20,
+                    padding: '14px 20px', fontSize: 15, fontWeight: 600,
+                    background: '#FFF0F5', outline: 'none', fontFamily: 'inherit',
+                    resize: 'none', boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {error && <div style={{ background: '#FFE0E0', border: '2px solid #FF6B6B', borderRadius: 14, padding: '10px 16px', color: '#CC0000', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>{error}</div>}
 
               <button
-                onClick={() => fullName && username ? setStep(2) : setError('Fill name and username')}
-                className="w-full mt-6 bg-pink-400 text-white border-3 border-gray-900 rounded-2xl py-3 font-black text-lg shadow-[4px_4px_0px_#1C1C3A] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#1C1C3A] transition-all"
-              >
-                Next →
-              </button>
+                onClick={() => fullName && username ? (setError(''), setStep(2)) : setError('Fill in your name and username')}
+                style={{
+                  width: '100%', background: '#FF85B3', color: 'white',
+                  border: '3px solid #1C1C3A', borderRadius: 50,
+                  padding: '16px 20px', fontWeight: 900, fontSize: 17,
+                  boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
+              >Next →</button>
             </div>
           )}
 
-          {/* STEP 2 — CITY */}
+          {/* STEP 2 */}
           {step === 2 && (
             <div>
-              <h2 className="text-2xl font-black mb-2">Where are you? 📍</h2>
-              <p className="text-gray-500 mb-6">We'll find people in your city</p>
+              <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>Where are you? 📍</div>
+              <div style={{ color: '#888', fontSize: 15, marginBottom: 24 }}>We'll find people in your city</div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {CITIES.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setCity(c)}
-                    className={`py-3 px-4 rounded-2xl border-3 border-gray-900 font-bold text-sm transition-all shadow-[3px_3px_0px_#1C1C3A] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_#1C1C3A]
-                      ${city === c ? 'bg-pink-400 text-white' : 'bg-white text-gray-800'}`}
-                  >
-                    {c}
-                  </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
+                {CITIES.map((c, i) => (
+                  <button key={c} onClick={() => setCity(c)} style={{
+                    padding: '14px 10px', borderRadius: 16,
+                    border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
+                    background: city === c ? '#FF85B3' : BG[i % BG.length],
+                    color: city === c ? 'white' : '#1C1C3A',
+                    boxShadow: city === c ? '4px 4px 0 #1C1C3A' : '3px 3px 0 #1C1C3A',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    transform: city === c ? 'translate(-2px,-2px)' : 'none',
+                    transition: 'all 0.15s'
+                  }}>{c}</button>
                 ))}
               </div>
 
-              <div className="flex gap-3 mt-6">
+              {error && <div style={{ background: '#FFE0E0', border: '2px solid #FF6B6B', borderRadius: 14, padding: '10px 16px', color: '#CC0000', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>{error}</div>}
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setStep(1)} style={{
+                  flex: 1, background: 'white', color: '#1C1C3A',
+                  border: '3px solid #1C1C3A', borderRadius: 50,
+                  padding: '16px 20px', fontWeight: 900, fontSize: 17,
+                  boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}>← Back</button>
                 <button
-                  onClick={() => setStep(1)}
-                  className="flex-1 bg-white border-3 border-gray-900 rounded-2xl py-3 font-black shadow-[3px_3px_0px_#1C1C3A] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
-                >
-                  ← Back
-                </button>
-                <button
-                  onClick={() => city ? setStep(3) : setError('Pick a city')}
-                  className="flex-1 bg-pink-400 text-white border-3 border-gray-900 rounded-2xl py-3 font-black shadow-[4px_4px_0px_#1C1C3A] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#1C1C3A] transition-all"
-                >
-                  Next →
-                </button>
+                  onClick={() => city ? (setError(''), setStep(3)) : setError('Pick a city')}
+                  style={{
+                    flex: 2, background: '#FF85B3', color: 'white',
+                    border: '3px solid #1C1C3A', borderRadius: 50,
+                    padding: '16px 20px', fontWeight: 900, fontSize: 17,
+                    boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+                    fontFamily: 'inherit'
+                  }}
+                >Next →</button>
               </div>
             </div>
           )}
 
-          {/* STEP 3 — INTERESTS */}
+          {/* STEP 3 */}
           {step === 3 && (
             <div>
-              <h2 className="text-2xl font-black mb-2">Your interests 🎯</h2>
-              <p className="text-gray-500 mb-1">Pick 3 to 5 things you love</p>
-              <p className="text-pink-400 font-bold text-sm mb-6">{interests.length}/5 selected</p>
+              <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 4 }}>Your interests 🎯</div>
+              <div style={{ color: '#888', fontSize: 15, marginBottom: 4 }}>Pick 3 to 5 things you love</div>
+              <div style={{
+                display: 'inline-block',
+                background: '#FFB3CC', border: '2px solid #1C1C3A',
+                borderRadius: 50, padding: '4px 14px',
+                fontWeight: 700, fontSize: 13, marginBottom: 20
+              }}>{interests.length}/5 selected</div>
 
-              <div className="flex flex-wrap gap-2">
-                {INTERESTS.map(interest => (
-                  <button
-                    key={interest}
-                    onClick={() => toggleInterest(interest)}
-                    className={`py-2 px-4 rounded-full border-3 border-gray-900 font-bold text-sm transition-all shadow-[2px_2px_0px_#1C1C3A] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_#1C1C3A]
-                      ${interests.includes(interest) ? 'bg-pink-400 text-white' : 'bg-white text-gray-800'}`}
-                  >
-                    {interest}
-                  </button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+                {INTERESTS.map((x, i) => (
+                  <button key={x} onClick={() => toggleInterest(x)} style={{
+                    padding: '10px 18px', borderRadius: 50,
+                    border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
+                    background: interests.includes(x) ? '#FF85B3' : BG[i % BG.length],
+                    color: interests.includes(x) ? 'white' : '#1C1C3A',
+                    boxShadow: interests.includes(x) ? '4px 4px 0 #1C1C3A' : '2px 2px 0 #1C1C3A',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    transform: interests.includes(x) ? 'translate(-1px,-1px)' : 'none',
+                    transition: 'all 0.15s'
+                  }}>{x}</button>
                 ))}
               </div>
 
-              {error && (
-                <div className="mt-4 bg-red-50 border-2 border-red-400 rounded-2xl px-4 py-3 text-sm font-medium text-red-700">
-                  {error}
-                </div>
-              )}
+              {error && <div style={{ background: '#FFE0E0', border: '2px solid #FF6B6B', borderRadius: 14, padding: '10px 16px', color: '#CC0000', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>{error}</div>}
 
-              <div className="flex gap-3 mt-6">
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setStep(2)} style={{
+                  flex: 1, background: 'white', color: '#1C1C3A',
+                  border: '3px solid #1C1C3A', borderRadius: 50,
+                  padding: '16px 20px', fontWeight: 900, fontSize: 17,
+                  boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}>← Back</button>
                 <button
-                  onClick={() => setStep(2)}
-                  className="flex-1 bg-white border-3 border-gray-900 rounded-2xl py-3 font-black shadow-[3px_3px_0px_#1C1C3A] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all"
-                >
-                  ← Back
-                </button>
-                <button
-                  onClick={handleFinish}
-                  disabled={loading}
-                  className="flex-1 bg-green-400 text-white border-3 border-gray-900 rounded-2xl py-3 font-black shadow-[4px_4px_0px_#1C1C3A] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#1C1C3A] transition-all disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : "Let's go 🚀"}
-                </button>
+                  onClick={handleFinish} disabled={loading}
+                  style={{
+                    flex: 2, background: '#4CAF82', color: 'white',
+                    border: '3px solid #1C1C3A', borderRadius: 50,
+                    padding: '16px 20px', fontWeight: 900, fontSize: 17,
+                    boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+                    fontFamily: 'inherit', opacity: loading ? 0.6 : 1
+                  }}
+                >{loading ? 'Saving...' : "Let's go 🚀"}</button>
               </div>
             </div>
           )}
+
         </div>
       </div>
     </div>
