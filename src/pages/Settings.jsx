@@ -1,0 +1,194 @@
+import { useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar'
+import { LogOut, Save } from 'lucide-react'
+
+const INTERESTS = [
+  'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
+  'Travel', 'Books/Reading', 'Gaming', 'Photography',
+  'Startups/Entrepreneurship', 'Indie Music', 'Fitness', 'Food',
+  'Chess', 'Philosophy', 'Anime', 'Podcasts'
+]
+
+const CITIES = [
+  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai',
+  'Kolkata', 'Pune', 'Jaipur', 'Ahmedabad', 'Surat', 'Other'
+]
+
+export default function Settings({ profile, setProfile }) {
+  const navigate = useNavigate()
+  const [fullName,  setFullName]  = useState(profile?.full_name  || '')
+  const [bio,       setBio]       = useState(profile?.bio        || '')
+  const [city,      setCity]      = useState(profile?.city       || '')
+  const [interests, setInterests] = useState(profile?.interests  || [])
+  const [loading,   setLoading]   = useState(false)
+  const [saved,     setSaved]     = useState(false)
+  const [error,     setError]     = useState('')
+
+  function toggleInterest(x) {
+    setInterests(prev => prev.includes(x) ? prev.filter(i => i !== x) : prev.length < 5 ? [...prev, x] : prev)
+  }
+
+  async function handleSave() {
+    if (!fullName || !city || interests.length < 3) { setError('Fill all fields and pick at least 3 interests'); return }
+    setLoading(true); setError('')
+    const { data, error: err } = await supabase.from('profiles')
+      .update({ full_name: fullName, bio, city, interests })
+      .eq('id', profile.id).select().single()
+    if (err) { setError(err.message); setLoading(false); return }
+    setProfile(data); setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+    setLoading(false)
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    navigate('/')
+  }
+
+  const section = (title, children) => (
+    <div style={{
+      background: 'white', border: '3px solid #1C1C3A',
+      borderRadius: 20, padding: 20,
+      boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
+    }}>
+      <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 14 }}>{title}</div>
+      {children}
+    </div>
+  )
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
+      <Navbar active="settings" profile={profile} />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
+
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>Settings ⚙️</div>
+          <div style={{ color: '#888', marginTop: 4 }}>Update your profile</div>
+        </div>
+
+        {section('Profile Info', (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[['Full Name', fullName, setFullName, 'text'], ['Bio', bio, setBio, 'textarea']].map(([label, val, setter, type]) => (
+              <div key={label}>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{label}</div>
+                {type === 'textarea' ? (
+                  <textarea value={val} onChange={e => setter(e.target.value)} rows={3}
+                    style={{
+                      width: '100%', border: '3px solid #1C1C3A', borderRadius: 16,
+                      padding: '12px 16px', fontSize: 15, fontWeight: 600,
+                      background: '#FFF0F5', outline: 'none',
+                      fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box'
+                    }} />
+                ) : (
+                  <input type="text" value={val} onChange={e => setter(e.target.value)}
+                    style={{
+                      width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
+                      padding: '12px 16px', fontSize: 15, fontWeight: 600,
+                      background: '#FFF0F5', outline: 'none',
+                      fontFamily: 'inherit', boxSizing: 'border-box'
+                    }} />
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+
+        {section('Your City 📍', (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {CITIES.map(c => (
+              <button key={c} onClick={() => setCity(c)} style={{
+                padding: '10px 8px', borderRadius: 14,
+                border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
+                background: city === c ? '#FF85B3' : 'white',
+                color: city === c ? 'white' : '#1C1C3A',
+                boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer'
+              }}>{c}</button>
+            ))}
+          </div>
+        ))}
+
+        {section(`Interests 🎯 (${interests.length}/5)`, (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {INTERESTS.map(x => (
+              <button key={x} onClick={() => toggleInterest(x)} style={{
+                padding: '8px 16px', borderRadius: 50,
+                border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
+                background: interests.includes(x) ? '#FF85B3' : 'white',
+                color: interests.includes(x) ? 'white' : '#1C1C3A',
+                boxShadow: '2px 2px 0 #1C1C3A', cursor: 'pointer'
+              }}>{x}</button>
+            ))}
+          </div>
+        ))}
+
+        {/* PREMIUM */}
+        <div style={{
+          background: '#FFD699', border: '3px solid #1C1C3A',
+          borderRadius: 20, padding: 20,
+          boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
+        }}>
+          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>⭐ Premium</div>
+          <div style={{ color: '#555', fontSize: 14, marginBottom: 14 }}>Unlock unlimited matches and exclusive features.</div>
+          <div style={{
+            background: 'white', border: '3px solid #1C1C3A',
+            borderRadius: 16, padding: 16, marginBottom: 14
+          }}>
+            <div style={{ fontWeight: 900, fontSize: 22, color: '#1C1C3A' }}>₹199 / month</div>
+            {['Join up to 5 groups','See who viewed your profile','Priority in discovery','Verified badge'].map(f => (
+              <div key={f} style={{ fontSize: 14, color: '#555', marginTop: 6, fontWeight: 600 }}>✓ {f}</div>
+            ))}
+          </div>
+          {profile?.is_premium ? (
+            <div style={{
+              background: '#B8F0B8', border: '3px solid #4CAF82',
+              borderRadius: 14, padding: '12px 16px',
+              fontWeight: 900, color: '#1C6B3A', textAlign: 'center'
+            }}>✅ You are a Premium member!</div>
+          ) : (
+            <button style={{
+              width: '100%', background: '#FF9F1C', color: 'white',
+              border: '3px solid #1C1C3A', borderRadius: 50,
+              padding: '14px 20px', fontWeight: 900, fontSize: 16,
+              boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer'
+            }}>Upgrade to Premium ⭐</button>
+          )}
+        </div>
+
+        {error && (
+          <div style={{
+            background: '#FFE0E0', border: '3px solid #FF6B6B',
+            borderRadius: 14, padding: '12px 16px',
+            fontWeight: 700, color: '#CC0000', marginBottom: 14
+          }}>{error}</div>
+        )}
+
+        <button onClick={handleSave} disabled={loading} style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          background: saved ? '#4CAF82' : '#FF85B3', color: 'white',
+          border: '3px solid #1C1C3A', borderRadius: 50,
+          padding: '16px 20px', fontWeight: 900, fontSize: 17,
+          boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+          marginBottom: 12, opacity: loading ? 0.6 : 1,
+          transition: 'all 0.2s'
+        }}>
+          <Save size={20} />
+          {loading ? 'Saving...' : saved ? 'Saved! ✅' : 'Save Changes'}
+        </button>
+
+        <button onClick={handleLogout} style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          background: 'white', color: '#CC0000',
+          border: '3px solid #1C1C3A', borderRadius: 50,
+          padding: '16px 20px', fontWeight: 900, fontSize: 17,
+          boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+          marginBottom: 32
+        }}>
+          <LogOut size={20} /> Log Out
+        </button>
+
+      </div>
+    </div>
+  )
+}
