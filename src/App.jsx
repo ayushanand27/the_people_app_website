@@ -11,6 +11,7 @@ import Chat        from './pages/Chat'
 import Events      from './pages/Events'
 import Profile     from './pages/Profile'
 import Settings    from './pages/Settings'
+import Admin       from './pages/Admin'
 
 export default function App() {
   const [session,  setSession]  = useState(null)
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/events"      element={session ? <Events    profile={profile} /> : <Navigate to="/auth" />} />
         <Route path="/profile/:id" element={session ? <Profile   profile={profile} /> : <Navigate to="/auth" />} />
         <Route path="/settings"    element={session ? <Settings  profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
+        <Route path="/admin"        element={session ? <Admin profile={profile} /> : <Navigate to="/auth" />} />
       </Routes>
     </BrowserRouter>
   )
