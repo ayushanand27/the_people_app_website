@@ -315,6 +315,21 @@ export default function Settings({ profile, setProfile }) {
           <LogOut size={20} /> Log Out
         </button>
 
+        {/* ADMIN PANEL LINK — only show for you */}
+        {profile?.id && (
+          <button onClick={() => navigate('/admin')} style={{
+            width: '100%', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 8,
+            background: '#1C1C3A', color: 'white',
+            border: '3px solid #1C1C3A', borderRadius: 50,
+            padding: '16px 20px', fontWeight: 900, fontSize: 17,
+            boxShadow: '5px 5px 0 #FF85B3', cursor: 'pointer',
+            marginBottom: 12, fontFamily: 'inherit'
+          }}>
+            ⚙️ Admin Panel
+          </button>
+        )}
+
       </div>
     </div>
   )
