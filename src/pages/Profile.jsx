@@ -5,7 +5,6 @@ import Navbar from '../components/Navbar'
 import { MessageCircle, Settings } from 'lucide-react'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
-const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
 
 export default function Profile({ profile }) {
   const navigate     = useNavigate()
@@ -55,25 +54,36 @@ export default function Profile({ profile }) {
           boxShadow: '6px 6px 0 #1C1C3A', marginBottom: 16
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+
+            {/* AVATAR — shows photo if available */}
             <div style={{
-              width: 80, height: 80, borderRadius: 20,
-              background: '#FF6B9D', border: '3px solid #1C1C3A',
+              width: 88, height: 88, borderRadius: 22,
+              border: '3px solid #1C1C3A',
+              background: '#FF6B9D', overflow: 'hidden',
+              boxShadow: '4px 4px 0 #1C1C3A',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 900, fontSize: 36,
-              boxShadow: '4px 4px 0 #1C1C3A'
+              flexShrink: 0
             }}>
-              {user.full_name?.[0] || '?'}
+              {user.avatar_url ? (
+                <img src={user.avatar_url} alt={user.full_name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ color: 'white', fontWeight: 900, fontSize: 36 }}>
+                  {user.full_name?.[0] || '?'}
+                </span>
+              )}
             </div>
 
+            {/* ACTION BUTTON */}
             {isOwn ? (
               <button onClick={() => navigate('/settings')} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '10px 18px', borderRadius: 14,
                 border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
                 background: 'white', cursor: 'pointer',
-                boxShadow: '3px 3px 0 #1C1C3A'
+                boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
               }}>
-                <Settings size={16} /> Edit
+                <Settings size={16} /> Edit Profile
               </button>
             ) : (
               <button onClick={() => navigate(`/chat/${user.id}`)} style={{
@@ -81,14 +91,14 @@ export default function Profile({ profile }) {
                 padding: '10px 18px', borderRadius: 14,
                 border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
                 background: '#FF85B3', color: 'white', cursor: 'pointer',
-                boxShadow: '3px 3px 0 #1C1C3A'
+                boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
               }}>
                 <MessageCircle size={16} /> Message
               </button>
             )}
           </div>
 
-          <div style={{ fontWeight: 900, fontSize: 24, color: '#1C1C3A' }}>{user.full_name}</div>
+          <div style={{ fontWeight: 900, fontSize: 24 }}>{user.full_name}</div>
           <div style={{ color: '#555', fontWeight: 600, marginTop: 2 }}>@{user.username}</div>
           <div style={{ color: '#555', fontSize: 14, marginTop: 4 }}>📍 {user.city}</div>
           {user.bio && <div style={{ color: '#333', marginTop: 10, lineHeight: 1.6, fontSize: 15 }}>{user.bio}</div>}
@@ -153,13 +163,20 @@ export default function Profile({ profile }) {
           }}>
             <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 12 }}>Match Score 🎯</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ flex: 1, height: 16, background: '#eee', borderRadius: 50, border: '2px solid #1C1C3A', overflow: 'hidden' }}>
-                <div style={{ width: `${score}%`, height: '100%', background: '#FF85B3', borderRadius: 50 }} />
+              <div style={{
+                flex: 1, height: 16, background: '#eee',
+                borderRadius: 50, border: '2px solid #1C1C3A', overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${score}%`, height: '100%',
+                  background: '#FF85B3', borderRadius: 50
+                }} />
               </div>
               <span style={{ fontWeight: 900, fontSize: 24, color: '#FF85B3' }}>{score}%</span>
             </div>
           </div>
         )}
+
       </div>
     </div>
   )
