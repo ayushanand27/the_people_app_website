@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Home, Compass, Users, MessageCircle, Calendar, User } from 'lucide-react'
+import { Home, Compass, Users, MessageCircle, Calendar, User, Play } from 'lucide-react'
 
 export default function Navbar({ active, profile }) {
   const navigate = useNavigate()
@@ -39,6 +39,7 @@ export default function Navbar({ active, profile }) {
   const tabs = [
     { id: 'dashboard', icon: Home,          label: 'Home',     path: '/dashboard' },
     { id: 'discover',  icon: Compass,       label: 'Discover', path: '/discover'  },
+    { id: 'moments',   icon: Play,          label: 'Moments',  path: '/moments'   },
     { id: 'groups',    icon: Users,         label: 'Groups',   path: '/groups'    },
     { id: 'chat',      icon: MessageCircle, label: 'Chat',     path: '/chat',  badge: unread },
     { id: 'events',    icon: Calendar,      label: 'Events',   path: '/events'    },

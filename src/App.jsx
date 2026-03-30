@@ -9,6 +9,7 @@ import Discover    from './pages/Discover'
 import Groups      from './pages/Groups'
 import Chat        from './pages/Chat'
 import Events      from './pages/Events'
+import Moments     from './pages/Moments'
 import Profile     from './pages/Profile'
 import Settings    from './pages/Settings'
 import Admin       from './pages/Admin'
@@ -68,6 +69,7 @@ export default function App() {
         <Route path="/chat"        element={session ? <Chat      profile={profile} /> : <Navigate to="/auth" />} />
         <Route path="/chat/:id"    element={session ? <Chat      profile={profile} /> : <Navigate to="/auth" />} />
         <Route path="/events"      element={session ? <Events    profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/moments"     element={session ? <Moments   profile={profile} /> : <Navigate to="/auth" />} />
         <Route path="/profile/:id" element={session ? <Profile   profile={profile} /> : <Navigate to="/auth" />} />
         <Route path="/settings"    element={session ? <Settings  profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
         <Route path="/admin" element={
