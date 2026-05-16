@@ -176,6 +176,15 @@ npm run dev
   3. Add environment variables in Vercel project settings
   4. Deploy — Vercel will run the build command
 
+Live deployment (production)
+
+You can link directly to the live site from your GitHub README. Current Vercel deployment URLs for this project:
+
+- https://the-prople-app-website-git-main-ayushanand27s-projects.vercel.app
+- https://the-prople-app-website-e06ff4q4c-ayushanand27s-projects.vercel.app
+
+Tip: pick one canonical domain (the first link above is likely the most recent production URL) and add it to your repository description so visitors can find it easily.
+
 ## Security & production hardening
 
 - Enable Row Level Security (RLS) on all tables and write minimal policies allowing only intended actions (e.g., update own profile).
