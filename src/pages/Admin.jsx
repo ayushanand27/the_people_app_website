@@ -111,16 +111,6 @@ export default function Admin({ profile }) {
     if (!confirm('Delete this event?')) return
     setError('')
 
-    const { error: attendeeError } = await supabase
-      .from('event_attendees')
-      .delete()
-      .eq('event_id', id)
-
-    if (attendeeError) {
-      setError(attendeeError.message)
-      return
-    }
-
     const { error: eventError } = await supabase
       .from('events')
       .delete()
