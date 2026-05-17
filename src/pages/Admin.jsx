@@ -39,6 +39,7 @@ export default function Admin({ profile }) {
   const [eDate,     setEDate]     = useState('')
   const [eLocation, setELocation] = useState('')
   const [eMax,      setEMax]      = useState(30)
+  const [eventSaving, setEventSaving] = useState(false)
 
   useEffect(() => {
     fetchAll()
@@ -90,21 +91,27 @@ export default function Admin({ profile }) {
   }
 
   async function createEvent() {
+    if (eventSaving) return
     if (!eName || !eCity || !eDate || !eLocation) {
       setError('Fill all event fields')
       return
     }
     setError('')
-    const { error: err } = await supabase.from('events').insert({
-      title: eName, description: eDesc,
-      city: eCity, date: new Date(eDate).toISOString(),
-      location: eLocation, max_attendees: eMax,
-      created_by: profile.id
-    })
-    if (err) { setError(err.message); return }
-    setEName(''); setEDesc(''); setEDate(''); setELocation('')
-    showSuccess('Event created!')
-    fetchAll()
+    setEventSaving(true)
+    try {
+      const { error: err } = await supabase.from('events').insert({
+        title: eName, description: eDesc,
+        city: eCity, date: new Date(eDate).toISOString(),
+        location: eLocation, max_attendees: eMax,
+        created_by: profile.id
+      })
+      if (err) { setError(err.message); return }
+      setEName(''); setEDesc(''); setEDate(''); setELocation('')
+      showSuccess('Event created!')
+      fetchAll()
+    } finally {
+      setEventSaving(false)
+    }
   }
 
   async function deleteEvent(id) {
@@ -349,13 +356,15 @@ export default function Admin({ profile }) {
                   onChange={e => setELocation(e.target.value)}
                   placeholder="e.g. Tapri Central, C-Scheme, Jaipur" />
               </div>
-              <button onClick={createEvent} style={{
+              <button onClick={createEvent} disabled={eventSaving} style={{
                 background: '#4CAF82', color: 'white',
                 border: '3px solid #1C1C3A', borderRadius: 50,
                 padding: '12px 28px', fontWeight: 900, fontSize: 15,
                 boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
-                fontFamily: 'inherit'
-              }}>Create Event ✓</button>
+                fontFamily: 'inherit',
+                opacity: eventSaving ? 0.65 : 1,
+                cursor: eventSaving ? 'not-allowed' : 'pointer'
+              }}>{eventSaving ? 'Creating...' : 'Create Event ✓'}</button>
             </div>
 
             {/* EVENTS LIST */}
