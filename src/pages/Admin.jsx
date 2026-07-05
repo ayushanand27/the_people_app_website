@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2, Users, Calendar } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
+import AdminReportsTab from './admin/AdminReportsTab'
+import CityPicker from '../components/CityPicker'
+import { resolveCity, isCityValid } from '../lib/cities'
 
 const INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
@@ -10,10 +13,7 @@ const INTERESTS = [
   'Chess', 'Philosophy', 'Anime', 'Podcasts'
 ]
 
-const CITIES = [
-  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai',
-  'Kolkata', 'Pune', 'Jaipur', 'Ahmedabad', 'Surat', 'Other'
-]
+const USER_PAGE_SIZE = 20
 
 export default function Admin({ profile }) {
   const navigate = useNavigate()
@@ -21,6 +21,11 @@ export default function Admin({ profile }) {
   const [groups,   setGroups]   = useState([])
   const [events,   setEvents]   = useState([])
   const [users,    setUsers]    = useState([])
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [usersHasMore, setUsersHasMore] = useState(true)
+  const [usersLoadingMore, setUsersLoadingMore] = useState(false)
+  const usersCursorRef = useRef(null)
+  const [pendingReports, setPendingReports] = useState(0)
   const [loading,  setLoading]  = useState(true)
   const [success,  setSuccess]  = useState('')
   const [error,    setError]    = useState('')
@@ -29,6 +34,7 @@ export default function Admin({ profile }) {
   const [gName,     setGName]     = useState('')
   const [gDesc,     setGDesc]     = useState('')
   const [gCity,     setGCity]     = useState('Jaipur')
+  const [gCustomCity, setGCustomCity] = useState('')
   const [gMax,      setGMax]      = useState(12)
   const [gInterests,setGInterests]= useState([])
 
@@ -36,6 +42,7 @@ export default function Admin({ profile }) {
   const [eName,     setEName]     = useState('')
   const [eDesc,     setEDesc]     = useState('')
   const [eCity,     setECity]     = useState('Jaipur')
+  const [eCustomCity, setECustomCity] = useState('')
   const [eDate,     setEDate]     = useState('')
   const [eLocation, setELocation] = useState('')
   const [eMax,      setEMax]      = useState(30)
@@ -45,15 +52,55 @@ export default function Admin({ profile }) {
     fetchAll()
   }, [])
 
+  useEffect(() => {
+    if (tab === 'users' && users.length === 0 && !usersLoadingMore) {
+      usersCursorRef.current = null
+      fetchUsers(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- load first page when opening Users tab
+  }, [tab])
+
+  async function fetchUsers(append = false) {
+    if (append) setUsersLoadingMore(true)
+
+    let query = supabase
+      .from('profiles')
+      .select('id, full_name, username, city, created_at')
+      .order('created_at', { ascending: false })
+      .limit(USER_PAGE_SIZE)
+
+    if (append && usersCursorRef.current) {
+      query = query.lt('created_at', usersCursorRef.current)
+    }
+
+    const { data, error } = await query
+    if (error) {
+      setError(error.message)
+      setUsersLoadingMore(false)
+      return
+    }
+
+    const batch = data || []
+    if (batch.length > 0) {
+      usersCursorRef.current = batch[batch.length - 1].created_at
+    }
+    setUsersHasMore(batch.length === USER_PAGE_SIZE)
+    setUsers(prev => (append ? [...prev, ...batch] : batch))
+    setUsersLoadingMore(false)
+  }
+
   async function fetchAll() {
-    const [g, e, u] = await Promise.all([
+    const [g, e, r, userCount] = await Promise.all([
       supabase.from('groups').select('*, group_members(count)').order('created_at', { ascending: false }),
       supabase.from('events').select('*, event_attendees(count)').order('date', { ascending: false }),
-      supabase.from('profiles').select('id, full_name, username, city, created_at').order('created_at', { ascending: false }).limit(50)
+      supabase.from('reports').select('id, status'),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
     ])
     setGroups(g.data || [])
     setEvents(e.data || [])
-    setUsers(u.data  || [])
+    const reps = r.data || []
+    setPendingReports(reps.filter(x => x.status === 'pending').length)
+    setTotalUsers(userCount.count || 0)
     setLoading(false)
   }
 
@@ -67,14 +114,15 @@ export default function Admin({ profile }) {
   }
 
   async function createGroup() {
-    if (!gName || !gCity || gInterests.length === 0) {
+    const finalGCity = resolveCity(gCity, gCustomCity)
+    if (!gName || !isCityValid(gCity, gCustomCity) || gInterests.length === 0) {
       setError('Fill all group fields')
       return
     }
     setError('')
     const { error: err } = await supabase.from('groups').insert({
       name: gName, description: gDesc,
-      city: gCity, max_members: gMax,
+      city: finalGCity, max_members: gMax,
       interests: gInterests,
       created_by: profile.id
     })
@@ -92,7 +140,8 @@ export default function Admin({ profile }) {
 
   async function createEvent() {
     if (eventSaving) return
-    if (!eName || !eCity || !eDate || !eLocation) {
+    const finalECity = resolveCity(eCity, eCustomCity)
+    if (!eName || !isCityValid(eCity, eCustomCity) || !eDate || !eLocation) {
       setError('Fill all event fields')
       return
     }
@@ -101,7 +150,7 @@ export default function Admin({ profile }) {
     try {
       const { error: err } = await supabase.from('events').insert({
         title: eName, description: eDesc,
-        city: eCity, date: new Date(eDate).toISOString(),
+        city: finalECity, date: new Date(eDate).toISOString(),
         location: eLocation, max_attendees: eMax,
         created_by: profile.id
       })
@@ -140,6 +189,14 @@ export default function Admin({ profile }) {
 
   const labelStyle = { fontWeight: 700, fontSize: 13, marginBottom: 6, display: 'block' }
 
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FFF0F5' }}>
+        <div style={{ fontWeight: 900, color: '#FF85B3' }}>Loading admin panel...</div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 40 }}>
 
@@ -171,11 +228,12 @@ export default function Admin({ profile }) {
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px' }}>
 
         {/* STATS ROW */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
           {[
-            { label: 'Total Users', value: users.length, bg: '#FFB3CC', icon: '👥' },
+            { label: 'Total Users', value: totalUsers, bg: '#FFB3CC', icon: '👥' },
             { label: 'Total Groups', value: groups.length, bg: '#B8F0B8', icon: '🏘️' },
             { label: 'Total Events', value: events.length, bg: '#B3E5FC', icon: '🎉' },
+            { label: 'Pending Reports', value: pendingReports, bg: '#FFD699', icon: '🛡️' },
           ].map(s => (
             <div key={s.label} style={{
               background: s.bg, border: '3px solid #1C1C3A',
@@ -191,7 +249,7 @@ export default function Admin({ profile }) {
 
         {/* TABS */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          {['groups','events','users'].map(t => (
+          {['groups','events','users','reports'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '10px 20px', borderRadius: 50,
               border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
@@ -199,7 +257,12 @@ export default function Admin({ profile }) {
               color: tab === t ? 'white' : '#1C1C3A',
               boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer',
               fontFamily: 'inherit', textTransform: 'capitalize'
-            }}>{t === 'groups' ? '🏘️ Groups' : t === 'events' ? '🎉 Events' : '👥 Users'}</button>
+            }}>{
+              t === 'groups' ? '🏘️ Groups'
+              : t === 'events' ? '🎉 Events'
+              : t === 'users' ? '👥 Users'
+              : `🛡️ Reports${pendingReports ? ` (${pendingReports})` : ''}`
+            }</button>
           ))}
         </div>
 
@@ -238,9 +301,13 @@ export default function Admin({ profile }) {
                 </div>
                 <div>
                   <label style={labelStyle}>City *</label>
-                  <select style={inputStyle} value={gCity} onChange={e => setGCity(e.target.value)}>
-                    {CITIES.map(c => <option key={c}>{c}</option>)}
-                  </select>
+                  <CityPicker
+                    layout="select"
+                    city={gCity}
+                    customCity={gCustomCity}
+                    onCityChange={setGCity}
+                    onCustomCityChange={setGCustomCity}
+                  />
                 </div>
               </div>
               <div style={{ marginBottom: 12 }}>
@@ -327,9 +394,13 @@ export default function Admin({ profile }) {
                 </div>
                 <div>
                   <label style={labelStyle}>City *</label>
-                  <select style={inputStyle} value={eCity} onChange={e => setECity(e.target.value)}>
-                    {CITIES.map(c => <option key={c}>{c}</option>)}
-                  </select>
+                  <CityPicker
+                    layout="select"
+                    city={eCity}
+                    customCity={eCustomCity}
+                    onCityChange={setECity}
+                    onCustomCityChange={setECustomCity}
+                  />
                 </div>
               </div>
               <div style={{ marginBottom: 12 }}>
@@ -360,10 +431,10 @@ export default function Admin({ profile }) {
                 background: '#4CAF82', color: 'white',
                 border: '3px solid #1C1C3A', borderRadius: 50,
                 padding: '12px 28px', fontWeight: 900, fontSize: 15,
-                boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
+                boxShadow: '4px 4px 0 #1C1C3A',
                 fontFamily: 'inherit',
                 opacity: eventSaving ? 0.65 : 1,
-                cursor: eventSaving ? 'not-allowed' : 'pointer'
+                cursor: eventSaving ? 'not-allowed' : 'pointer',
               }}>{eventSaving ? 'Creating...' : 'Create Event ✓'}</button>
             </div>
 
@@ -403,7 +474,7 @@ export default function Admin({ profile }) {
         {tab === 'users' && (
           <div>
             <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 12 }}>
-              All Users ({users.length})
+              All Users ({totalUsers})
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {users.map((u, i) => (
@@ -432,7 +503,30 @@ export default function Admin({ profile }) {
                 </div>
               ))}
             </div>
+            {usersHasMore && (
+              <button
+                onClick={() => fetchUsers(true)}
+                disabled={usersLoadingMore}
+                style={{
+                  marginTop: 16, width: '100%', padding: '12px 20px',
+                  background: usersLoadingMore ? '#eee' : 'white',
+                  border: '3px solid #1C1C3A', borderRadius: 50,
+                  fontWeight: 700, fontSize: 14, cursor: usersLoadingMore ? 'wait' : 'pointer',
+                  boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit',
+                }}
+              >
+                {usersLoadingMore ? 'Loading...' : 'Load more users'}
+              </button>
+            )}
           </div>
+        )}
+
+        {/* REPORTS TAB */}
+        {tab === 'reports' && (
+          <AdminReportsTab
+            onSuccess={msg => { showSuccess(msg); fetchAll() }}
+            onError={msg => setError(msg)}
+          />
         )}
       </div>
     </div>

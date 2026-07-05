@@ -1,18 +1,29 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Home, Compass, Users, MessageCircle, Calendar, User, Play } from 'lucide-react'
+import { Home, Compass, Users, MessageCircle, Calendar, User, Play, Bell } from 'lucide-react'
+import { getUnreadNotificationCount } from '../lib/social'
 
 export default function Navbar({ active, profile }) {
   const navigate = useNavigate()
   const [unread, setUnread] = useState(0)
+  const [notifCount, setNotifCount] = useState(0)
 
   useEffect(() => {
-    if (profile) {
-      fetchUnread()
-      subscribeUnread()
-    }
+    if (!profile) return
+    fetchUnread()
+    fetchNotifCount()
+    const cleanup = subscribeUnread()
+    const ch = supabase.channel('notifs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' },
+        payload => { if (payload.new.user_id === profile.id) setNotifCount(c => c + 1) })
+      .subscribe()
+    return () => { cleanup?.(); supabase.removeChannel(ch) }
   }, [profile])
+
+  async function fetchNotifCount() {
+    setNotifCount(await getUnreadNotificationCount(profile.id))
+  }
 
   async function fetchUnread() {
     const { count } = await supabase
@@ -69,23 +80,46 @@ export default function Navbar({ active, profile }) {
             The People App
           </span>
         </div>
-        <button
-          onClick={() => navigate(`/profile/${profile?.id}`)}
-          style={{
-            width: 40, height: 40, background: '#FF85B3',
-            borderRadius: 12, border: '3px solid #1C1C3A',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 900, fontSize: 18,
-            boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer'
-          }}
-        >
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt=""
-              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} />
-          ) : (
-            profile?.full_name?.[0] || '?'
-          )}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => navigate('/notifications')}
+            style={{
+              width: 40, height: 40, background: notifCount > 0 ? '#FF85B3' : 'white',
+              borderRadius: 12, border: '3px solid #1C1C3A',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: notifCount > 0 ? 'white' : '#1C1C3A',
+              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer', position: 'relative'
+            }}
+          >
+            <Bell size={20} />
+            {notifCount > 0 && (
+              <div style={{
+                position: 'absolute', top: -6, right: -6,
+                background: '#FF6B6B', color: 'white', border: '2px solid white',
+                borderRadius: 50, minWidth: 18, height: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10, fontWeight: 900, padding: '0 4px'
+              }}>{notifCount > 99 ? '99+' : notifCount}</div>
+            )}
+          </button>
+          <button
+            onClick={() => navigate(`/profile/${profile?.id}`)}
+            style={{
+              width: 40, height: 40, background: '#FF85B3',
+              borderRadius: 12, border: '3px solid #1C1C3A',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontWeight: 900, fontSize: 18,
+              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer'
+            }}
+          >
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} />
+            ) : (
+              profile?.full_name?.[0] || '?'
+            )}
+          </button>
+        </div>
       </div>
 
       {/* BOTTOM NAV */}

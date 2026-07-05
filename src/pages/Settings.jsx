@@ -2,6 +2,8 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import CityPicker from '../components/CityPicker'
+import { initCityState, resolveCity, isCityValid } from '../lib/cities'
 import { LogOut, Save, Camera } from 'lucide-react'
 
 const INTERESTS = [
@@ -11,18 +13,15 @@ const INTERESTS = [
   'Chess', 'Philosophy', 'Anime', 'Podcasts'
 ]
 
-const CITIES = [
-  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai',
-  'Kolkata', 'Pune', 'Jaipur', 'Ahmedabad', 'Surat', 'Other'
-]
-
 export default function Settings({ profile, setProfile }) {
   const navigate  = useNavigate()
   const fileRef   = useRef(null)
+  const initialCity = initCityState(profile?.city)
 
   const [fullName,    setFullName]    = useState(profile?.full_name  || '')
   const [bio,         setBio]         = useState(profile?.bio        || '')
-  const [city,        setCity]        = useState(profile?.city       || '')
+  const [city,        setCity]        = useState(initialCity.city)
+  const [customCity,  setCustomCity]  = useState(initialCity.customCity)
   const [interests,   setInterests]   = useState(profile?.interests  || [])
   const [avatarUrl,   setAvatarUrl]   = useState(profile?.avatar_url || '')
   const [loading,     setLoading]     = useState(false)
@@ -79,15 +78,16 @@ export default function Settings({ profile, setProfile }) {
   }
 
   async function handleSave() {
-    if (!fullName || !city || interests.length < 3) {
-      setError('Fill all fields and pick at least 3 interests')
+    if (!fullName || !isCityValid(city, customCity) || interests.length < 3) {
+      setError('Fill all fields, enter your city, and pick at least 3 interests')
       return
     }
     setLoading(true)
     setError('')
+    const finalCity = resolveCity(city, customCity)
 
     const { data, error: err } = await supabase.from('profiles')
-      .update({ full_name: fullName, bio, city, interests, avatar_url: avatarUrl })
+      .update({ full_name: fullName, bio, city: finalCity, interests, avatar_url: avatarUrl })
       .eq('id', profile.id).select().single()
 
     if (err) { setError(err.message); setLoading(false); return }
@@ -215,18 +215,13 @@ export default function Settings({ profile, setProfile }) {
 
         {/* CITY */}
         {section('Your City 📍', (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-            {CITIES.map(c => (
-              <button key={c} onClick={() => setCity(c)} style={{
-                padding: '10px 8px', borderRadius: 14,
-                border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
-                background: city === c ? '#FF85B3' : 'white',
-                color: city === c ? 'white' : '#1C1C3A',
-                boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer',
-                fontFamily: 'inherit'
-              }}>{c}</button>
-            ))}
-          </div>
+          <CityPicker
+            layout="compact"
+            city={city}
+            customCity={customCity}
+            onCityChange={setCity}
+            onCustomCityChange={setCustomCity}
+          />
         ))}
 
         {/* INTERESTS */}
@@ -315,8 +310,8 @@ export default function Settings({ profile, setProfile }) {
           <LogOut size={20} /> Log Out
         </button>
 
-        {/* ADMIN PANEL LINK — only show for you */}
-        {profile?.id === '28b4a02f-8849-4f0c-ba16-531438f3e1ae' && (
+        {/* ADMIN PANEL LINK — only for admin users (profiles.is_admin) */}
+        {profile?.is_admin && (
           <button onClick={() => navigate('/admin')} style={{
             width: '100%', display: 'flex', alignItems: 'center',
             justifyContent: 'center', gap: 8,

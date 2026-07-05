@@ -1,37 +1,41 @@
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+import { supabase } from './supabase'
+
+const FALLBACK = (context) =>
+  `Hey! Nice to connect — what got you interested in ${context}?`
 
 export async function generateIcebreaker(context = 'new connection') {
-  if (!OPENAI_API_KEY || OPENAI_API_KEY.includes('your_openai_api_key_here')) {
-    return `Hey! Nice to connect — what got you interested in ${context}?`;
+  const trimmed = String(context || '').trim() || 'new connection'
+
+  const { data, error } = await supabase.functions.invoke('ai-proxy', {
+    body: { type: 'icebreaker', context: trimmed },
+  })
+
+  if (error) {
+    console.warn('[ai] edge function error:', error.message)
+    return FALLBACK(trimmed)
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You generate short, friendly social icebreakers.',
-        },
-        {
-          role: 'user',
-          content: `Create one icebreaker line about: ${context}`,
-        },
-      ],
-      max_tokens: 40,
-      temperature: 0.8,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to generate AI icebreaker');
+  if (data?.error) {
+    console.warn('[ai] proxy error:', data.error)
+    return FALLBACK(trimmed)
   }
 
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content?.trim() || 'Hey there 👋';
+  return data?.text?.trim() || FALLBACK(trimmed)
+}
+
+/** Returns true if description/hashtags look like spam or abusive content. */
+export async function moderateUploadText(text) {
+  const trimmed = String(text || '').trim()
+  if (!trimmed) return { flagged: false }
+
+  const { data, error } = await supabase.functions.invoke('ai-proxy', {
+    body: { type: 'moderate_content', context: trimmed },
+  })
+
+  if (error || data?.error) {
+    console.warn('[ai] moderation unavailable:', error?.message || data?.error)
+    return { flagged: false }
+  }
+
+  return { flagged: Boolean(data?.flagged), reason: data?.reason || null }
 }

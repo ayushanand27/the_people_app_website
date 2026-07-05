@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { track } from '../lib/analytics'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -106,7 +107,10 @@ export default function Dashboard({ profile }) {
                 return (
                   <button
                     key={m.id}
-                    onClick={() => navigate(`/profile/${m.id}`)}
+                    onClick={() => {
+                      track('match_view', { user_id: profile.id, target_user_id: m.id })
+                      navigate(`/profile/${m.id}`)
+                    }}
                     style={{
                       background: BG[i % BG.length],
                       border: `3px solid #1C1C3A`,

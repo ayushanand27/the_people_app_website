@@ -1,17 +1,15 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { track } from '../lib/analytics'
 import { useNavigate } from 'react-router-dom'
+import CityPicker from '../components/CityPicker'
+import { resolveCity, isCityValid } from '../lib/cities'
 
 const INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
   'Travel', 'Books/Reading', 'Gaming', 'Photography',
   'Startups/Entrepreneurship', 'Indie Music', 'Fitness', 'Food',
   'Chess', 'Philosophy', 'Anime', 'Podcasts'
-]
-
-const CITIES = [
-  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai',
-  'Kolkata', 'Pune', 'Jaipur', 'Ahmedabad', 'Surat', 'Other'
 ]
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
@@ -23,6 +21,7 @@ export default function Onboarding({ profile, setProfile }) {
   const [username,  setUsername]  = useState('')
   const [bio,       setBio]       = useState('')
   const [city,      setCity]      = useState('')
+  const [customCity, setCustomCity] = useState('')
   const [interests, setInterests] = useState([])
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
@@ -35,8 +34,9 @@ export default function Onboarding({ profile, setProfile }) {
   }
 
   async function handleFinish() {
-    if (!fullName || !username || !city || interests.length < 3) {
-      setError('Please fill all fields and pick at least 3 interests')
+    const finalCity = resolveCity(city, customCity)
+    if (!fullName || !username || !isCityValid(city, customCity) || interests.length < 3) {
+      setError('Please fill all fields, enter your city, and pick at least 3 interests')
       return
     }
     setLoading(true)
@@ -46,12 +46,13 @@ export default function Onboarding({ profile, setProfile }) {
       .update({
         full_name: fullName,
         username: username.toLowerCase().replace(/\s/g, ''),
-        bio, city, interests,
+        bio, city: finalCity, interests,
         onboarding_complete: true
       })
       .eq('id', user.id).select().single()
     if (err) { setError(err.message); setLoading(false); return }
     setProfile(data)
+    track('onboarding_complete', { user_id: user.id })
     navigate('/dashboard')
   }
 
@@ -154,24 +155,16 @@ export default function Onboarding({ profile, setProfile }) {
               <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>Where are you? 📍</div>
               <div style={{ color: '#888', fontSize: 15, marginBottom: 24 }}>We'll find people in your city</div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
-                {CITIES.map((c, i) => (
-                  <button key={c} onClick={() => setCity(c)} style={{
-                    padding: '14px 10px', borderRadius: 16,
-                    border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
-                    background: city === c ? '#FF85B3' : BG[i % BG.length],
-                    color: city === c ? 'white' : '#1C1C3A',
-                    boxShadow: city === c ? '4px 4px 0 #1C1C3A' : '3px 3px 0 #1C1C3A',
-                    cursor: 'pointer', fontFamily: 'inherit',
-                    transform: city === c ? 'translate(-2px,-2px)' : 'none',
-                    transition: 'all 0.15s'
-                  }}>{c}</button>
-                ))}
-              </div>
+              <CityPicker
+                city={city}
+                customCity={customCity}
+                onCityChange={setCity}
+                onCustomCityChange={setCustomCity}
+              />
 
-              {error && <div style={{ background: '#FFE0E0', border: '2px solid #FF6B6B', borderRadius: 14, padding: '10px 16px', color: '#CC0000', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>{error}</div>}
+              {error && <div style={{ background: '#FFE0E0', border: '2px solid #FF6B6B', borderRadius: 14, padding: '10px 16px', color: '#CC0000', fontWeight: 700, fontSize: 14, marginBottom: 16, marginTop: 16 }}>{error}</div>}
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
                 <button onClick={() => setStep(1)} style={{
                   flex: 1, background: 'white', color: '#1C1C3A',
                   border: '3px solid #1C1C3A', borderRadius: 50,
@@ -180,7 +173,7 @@ export default function Onboarding({ profile, setProfile }) {
                   fontFamily: 'inherit'
                 }}>← Back</button>
                 <button
-                  onClick={() => city ? (setError(''), setStep(3)) : setError('Pick a city')}
+                  onClick={() => isCityValid(city, customCity) ? (setError(''), setStep(3)) : setError(city === 'Other' ? 'Enter your city name' : 'Pick a city')}
                   style={{
                     flex: 2, background: '#FF85B3', color: 'white',
                     border: '3px solid #1C1C3A', borderRadius: 50,

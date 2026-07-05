@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import { MessageCircle, Settings } from 'lucide-react'
+import { MessageCircle, Settings, UserPlus, UserCheck } from 'lucide-react'
+import { isFollowing, followUser, unfollowUser } from '../lib/social'
+import { track } from '../lib/analytics'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 
@@ -12,13 +14,35 @@ export default function Profile({ profile }) {
   const isOwn        = id === profile?.id
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const [following, setFollowing] = useState(false)
+  const [followBusy, setFollowBusy] = useState(false)
 
-  useEffect(() => { if (id) fetchUser() }, [id])
-
-  async function fetchUser() {
+  const fetchUser = useCallback(async () => {
     const { data } = await supabase.from('profiles').select('*').eq('id', id).single()
     setUser(data)
     setLoading(false)
+    if (profile?.id && id && id !== profile.id) {
+      setFollowing(await isFollowing(profile.id, id))
+    }
+  }, [id, profile?.id])
+
+  useEffect(() => { if (id) fetchUser() }, [id, fetchUser])
+
+  async function toggleFollow() {
+    if (followBusy || !user) return
+    setFollowBusy(true)
+    const next = !following
+    setFollowing(next)
+    setUser(u => ({ ...u, follower_count: Math.max((u.follower_count || 0) + (next ? 1 : -1), 0) }))
+    const ok = next
+      ? await followUser(profile.id, user.id)
+      : await unfollowUser(profile.id, user.id)
+    if (ok && next) track('follow', { user_id: profile.id, target_user_id: user.id })
+    if (!ok) {
+      setFollowing(!next)
+      setUser(u => ({ ...u, follower_count: Math.max((u.follower_count || 0) + (next ? -1 : 1), 0) }))
+    }
+    setFollowBusy(false)
   }
 
   function common() {
@@ -86,21 +110,40 @@ export default function Profile({ profile }) {
                 <Settings size={16} /> Edit Profile
               </button>
             ) : (
-              <button onClick={() => navigate(`/chat/${user.id}`)} style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '10px 18px', borderRadius: 14,
-                border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
-                background: '#FF85B3', color: 'white', cursor: 'pointer',
-                boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
-              }}>
-                <MessageCircle size={16} /> Message
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={toggleFollow} disabled={followBusy} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 18px', borderRadius: 14,
+                  border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
+                  background: following ? 'white' : '#4CAF82', color: following ? '#1C1C3A' : 'white',
+                  cursor: 'pointer', boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
+                }}>
+                  {following ? <><UserCheck size={16} /> Following</> : <><UserPlus size={16} /> Follow</>}
+                </button>
+                <button onClick={() => navigate(`/chat/${user.id}`)} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 18px', borderRadius: 14,
+                  border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
+                  background: '#FF85B3', color: 'white', cursor: 'pointer',
+                  boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
+                }}>
+                  <MessageCircle size={16} /> Message
+                </button>
+              </div>
             )}
           </div>
 
           <div style={{ fontWeight: 900, fontSize: 24 }}>{user.full_name}</div>
           <div style={{ color: '#555', fontWeight: 600, marginTop: 2 }}>@{user.username}</div>
           <div style={{ color: '#555', fontSize: 14, marginTop: 4 }}>📍 {user.city}</div>
+
+          {/* FOLLOWER / FOLLOWING COUNTS */}
+          <div style={{ display: 'flex', gap: 20, marginTop: 12 }}>
+            <div><span style={{ fontWeight: 900, fontSize: 18 }}>{user.follower_count || 0}</span>
+              <span style={{ color: '#555', fontSize: 13, marginLeft: 5 }}>Followers</span></div>
+            <div><span style={{ fontWeight: 900, fontSize: 18 }}>{user.following_count || 0}</span>
+              <span style={{ color: '#555', fontSize: 13, marginLeft: 5 }}>Following</span></div>
+          </div>
           {user.bio && <div style={{ color: '#333', marginTop: 10, lineHeight: 1.6, fontSize: 15 }}>{user.bio}</div>}
           {user.is_premium && (
             <div style={{
