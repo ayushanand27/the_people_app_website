@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { track } from '../lib/analytics'
-import { isPasswordRecoveryUrl } from '../lib/authRecovery'
+import { isPasswordRecoveryUrl, markPasswordResetPending, clearPasswordResetPending, isPasswordResetPending } from '../lib/authRecovery'
 
 export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
   const [email,       setEmail]       = useState('')
   const [password,    setPassword]    = useState('')
   const [newPassword, setNewPassword] = useState('')
-  const [mode,        setMode]        = useState(passwordRecovery || isPasswordRecoveryUrl() ? 'reset' : 'login')
+  const [mode,        setMode]        = useState(
+    passwordRecovery || isPasswordRecoveryUrl() || isPasswordResetPending() ? 'reset' : 'login'
+  )
   const [loading,     setLoading]     = useState(false)
   const [message,     setMessage]     = useState('')
 
   useEffect(() => {
-    if (passwordRecovery || isPasswordRecoveryUrl()) {
+    if (passwordRecovery || isPasswordRecoveryUrl() || isPasswordResetPending()) {
       setMode('reset')
     }
 
@@ -64,7 +66,10 @@ export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
     })
 
     if (error) setMessage(error.message)
-    else setMessage('Password reset link sent! Check your email.')
+    else {
+      markPasswordResetPending()
+      setMessage('Password reset link sent! Check your email (open link in browser if using Gmail app).')
+    }
 
     setLoading(false)
   }
@@ -81,7 +86,8 @@ export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) setMessage(error.message)
     else {
-      setMessage('Password updated! Redirecting...')
+      clearPasswordResetPending()
+      setMessage('Password updated! You can log in now.')
       window.history.replaceState({}, '', '/auth')
       onRecoveryComplete?.()
       setMode('login')

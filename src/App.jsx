@@ -2,7 +2,11 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { identifyUser } from './lib/analytics'
-import { isPasswordRecoveryUrl, redirectRecoveryToAuth } from './lib/authRecovery'
+import {
+  shouldShowPasswordRecovery,
+  redirectRecoveryToAuth,
+  clearPasswordResetPending,
+} from './lib/authRecovery'
 
 import Auth from './pages/Auth'
 
@@ -30,36 +34,33 @@ export default function App() {
   const [session,          setSession]          = useState(null)
   const [profile,          setProfile]          = useState(null)
   const [loading,          setLoading]          = useState(true)
-  const [passwordRecovery, setPasswordRecovery] = useState(isPasswordRecoveryUrl)
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   useLayoutEffect(() => {
     redirectRecoveryToAuth()
   }, [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      const recovering = isPasswordRecoveryUrl()
+    function handleAuthEvent(event, s) {
+      const recovering = shouldShowPasswordRecovery(s, event)
       setPasswordRecovery(recovering)
       setSession(s)
+
       if (recovering) {
         setLoading(false)
         return
       }
+
       if (s) fetchProfile(s.user.id)
-      else setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && isPasswordRecoveryUrl())) {
-        setPasswordRecovery(true)
-        setSession(s)
+      else {
+        setProfile(null)
         setLoading(false)
-        return
       }
+    }
 
-      setSession(s)
-      if (s && !passwordRecovery) fetchProfile(s.user.id)
-      else { setProfile(null); setLoading(false) }
+    // Single source of truth — avoids race where getSession returns old session before URL tokens parse
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      handleAuthEvent(event, s)
     })
 
     return () => subscription.unsubscribe()
@@ -86,6 +87,7 @@ export default function App() {
   }
 
   function handleRecoveryComplete() {
+    clearPasswordResetPending()
     setPasswordRecovery(false)
     window.history.replaceState({}, '', '/auth')
   }
