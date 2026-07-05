@@ -1,36 +1,23 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { track } from '../lib/analytics'
-import { isPasswordRecoveryUrl, markPasswordResetPending, clearPasswordResetPending, isPasswordResetPending } from '../lib/authRecovery'
+import { markPasswordResetPending, markGoogleOAuthPending } from '../lib/authRecovery'
 
-export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
-  const [email,       setEmail]       = useState('')
-  const [password,    setPassword]    = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [mode,        setMode]        = useState(
-    passwordRecovery || isPasswordRecoveryUrl() || isPasswordResetPending() ? 'reset' : 'login'
-  )
-  const [loading,     setLoading]     = useState(false)
-  const [message,     setMessage]     = useState('')
+export default function Auth() {
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
+  const [mode,     setMode]     = useState('login')
+  const [loading,  setLoading]  = useState(false)
+  const [message,  setMessage]  = useState('')
 
   useEffect(() => {
-    if (passwordRecovery || isPasswordRecoveryUrl() || isPasswordResetPending()) {
-      setMode('reset')
-    }
-
     const params = new URLSearchParams(window.location.search)
     const oauthError = params.get('error_description')
     if (oauthError) {
       setMessage(decodeURIComponent(oauthError.replace(/\+/g, ' ')))
       window.history.replaceState({}, '', '/auth')
     }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setMode('reset')
-    })
-
-    return () => subscription.unsubscribe()
-  }, [passwordRecovery])
+  }, [])
 
   async function handleEmail(e) {
     e.preventDefault()
@@ -61,44 +48,26 @@ export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
     setLoading(true)
     setMessage('')
 
+    // Clear saved session so the email link doesn't auto-login to dashboard
+    await supabase.auth.signOut({ scope: 'local' })
+    markPasswordResetPending()
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth`,
+      redirectTo: `${window.location.origin}/reset-password`,
     })
 
     if (error) setMessage(error.message)
     else {
-      markPasswordResetPending()
       setMessage('Password reset link sent! Check your email (open link in browser if using Gmail app).')
     }
 
     setLoading(false)
   }
 
-  async function handleReset(e) {
-    e.preventDefault()
-    if (newPassword.length < 6) {
-      setMessage('Password must be at least 6 characters')
-      return
-    }
-    setLoading(true)
-    setMessage('')
-
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
-    if (error) setMessage(error.message)
-    else {
-      clearPasswordResetPending()
-      setMessage('Password updated! You can log in now.')
-      window.history.replaceState({}, '', '/auth')
-      onRecoveryComplete?.()
-      setMode('login')
-      setNewPassword('')
-    }
-    setLoading(false)
-  }
-
   async function handleGoogle() {
     setLoading(true)
     setMessage('')
+    markGoogleOAuthPending()
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -130,7 +99,6 @@ export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
     login: 'Welcome back 👋',
     signup: 'Join the community 🚀',
     forgot: 'Forgot password? 🔑',
-    reset: 'Set new password 🔒',
   }
 
   return (
@@ -163,7 +131,7 @@ export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
             {titles[mode]}
           </div>
 
-          {mode !== 'forgot' && mode !== 'reset' && (
+          {mode !== 'forgot' && (
             <>
               <button type="button" onClick={handleGoogle} disabled={loading} style={{
                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
@@ -190,24 +158,7 @@ export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
             </>
           )}
 
-          {mode === 'reset' ? (
-            <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <input
-                type="password" placeholder="New password 🔒"
-                value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                required minLength={6} style={inputStyle}
-              />
-              <button type="submit" disabled={loading} style={{
-                width: '100%', background: '#4CAF82', color: 'white',
-                border: '3px solid #1C1C3A', borderRadius: 50,
-                padding: '16px 20px', fontWeight: 900, fontSize: 17,
-                cursor: 'pointer', fontFamily: 'inherit',
-                boxShadow: '5px 5px 0 #1C1C3A', opacity: loading ? 0.6 : 1,
-              }}>
-                {loading ? 'Saving...' : 'Update password →'}
-              </button>
-            </form>
-          ) : mode === 'forgot' ? (
+          {mode === 'forgot' ? (
             <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <p style={{ color: '#666', fontSize: 14, lineHeight: 1.5, marginBottom: 4 }}>
                 Enter your email and we&apos;ll send you a reset link.
@@ -230,12 +181,18 @@ export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
           ) : (
             <form onSubmit={handleEmail} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input
-                type="email" placeholder="Email address 📧"
+                type="email"
+                name="email"
+                autoComplete="email"
+                placeholder="Email address 📧"
                 value={email} onChange={e => setEmail(e.target.value)}
                 required style={inputStyle}
               />
               <input
-                type="password" placeholder="Password 🔒"
+                type="password"
+                name="password"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                placeholder="Password 🔒"
                 value={password} onChange={e => setPassword(e.target.value)}
                 required style={inputStyle}
               />
@@ -278,7 +235,7 @@ export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
           )}
 
           <div style={{ textAlign: 'center', marginTop: 16, fontSize: 14, color: '#888', fontWeight: 600 }}>
-            {mode === 'forgot' || mode === 'reset' ? (
+            {mode === 'forgot' ? (
               <button onClick={() => { setMode('login'); setMessage('') }} style={{
                 color: '#FF85B3', fontWeight: 900, background: 'none',
                 border: 'none', cursor: 'pointer', fontSize: 14, fontFamily: 'inherit',

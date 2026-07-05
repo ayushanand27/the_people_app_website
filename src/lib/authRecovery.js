@@ -1,17 +1,18 @@
 const RESET_KEY = 'peopleapp_password_reset_pending'
+const GOOGLE_OAUTH_KEY = 'peopleapp_google_oauth_pending'
 const RESET_TTL_MS = 60 * 60 * 1000 // 1 hour
 
-/** Call when user submits "Forgot password" — survives in-app browsers that strip URL hash. */
+/** localStorage survives Gmail in-app browser better than sessionStorage */
 export function markPasswordResetPending() {
-  sessionStorage.setItem(RESET_KEY, String(Date.now()))
+  localStorage.setItem(RESET_KEY, String(Date.now()))
 }
 
 export function clearPasswordResetPending() {
-  sessionStorage.removeItem(RESET_KEY)
+  localStorage.removeItem(RESET_KEY)
 }
 
 export function isPasswordResetPending() {
-  const ts = sessionStorage.getItem(RESET_KEY)
+  const ts = localStorage.getItem(RESET_KEY)
   if (!ts) return false
   if (Date.now() - Number(ts) > RESET_TTL_MS) {
     clearPasswordResetPending()
@@ -20,43 +21,56 @@ export function isPasswordResetPending() {
   return true
 }
 
-/** True when URL contains a Supabase auth callback for password recovery. */
-export function isPasswordRecoveryUrl() {
-  const hash = window.location.hash
-  if (hash.includes('type=recovery')) return true
-
-  const params = new URLSearchParams(window.location.search)
-  if (params.get('type') === 'recovery') return true
-
-  // PKCE / implicit auth callback on /auth after email link
-  if (window.location.pathname === '/auth' || window.location.pathname === '/') {
-    if (params.has('code') && isPasswordResetPending()) return true
-    if (hash.includes('access_token') && hash.includes('type=recovery')) return true
-  }
-
-  return false
+export function markGoogleOAuthPending() {
+  sessionStorage.setItem(GOOGLE_OAUTH_KEY, '1')
 }
 
-export function shouldShowPasswordRecovery(session, event) {
-  if (event === 'PASSWORD_RECOVERY') return true
-  if (isPasswordRecoveryUrl()) return true
-  if (session && isPasswordResetPending()) return true
-  return false
+export function clearGoogleOAuthPending() {
+  sessionStorage.removeItem(GOOGLE_OAUTH_KEY)
 }
 
-/** Send auth callbacks to /auth and preserve query + hash (required for PKCE code). */
-export function redirectRecoveryToAuth() {
+export function isGoogleOAuthPending() {
+  return sessionStorage.getItem(GOOGLE_OAUTH_KEY) === '1'
+}
+
+function hasAuthCallbackInUrl() {
   const params = new URLSearchParams(window.location.search)
   const hash = window.location.hash
-  const isAuthCallback =
-    isPasswordRecoveryUrl() ||
+  return (
     params.has('code') ||
+    params.has('token_hash') ||
+    params.get('type') === 'recovery' ||
     hash.includes('access_token') ||
-    (isPasswordResetPending() && (params.has('code') || hash.length > 1))
+    hash.includes('type=recovery')
+  )
+}
 
-  if (!isAuthCallback) return false
-  if (window.location.pathname === '/auth') return false
+/** Must run synchronously before Supabase client parses the URL (see authBootstrap.js). */
+export function redirectRecoveryToResetPage() {
+  if (window.location.pathname === '/reset-password') return false
 
-  window.location.replace(`/auth${window.location.search}${window.location.hash}`)
+  const params = new URLSearchParams(window.location.search)
+  const hash = window.location.hash
+  const hasCode = params.has('code')
+  const isGoogleReturn = hasCode && isGoogleOAuthPending()
+
+  if (isGoogleReturn) return false
+
+  const shouldRedirect =
+    params.get('type') === 'recovery' ||
+    params.has('token_hash') ||
+    hash.includes('type=recovery') ||
+    hasCode ||
+    hash.includes('access_token')
+
+  if (!shouldRedirect) return false
+
+  window.location.replace(`/reset-password${window.location.search}${hash}`)
   return true
+}
+
+export function shouldBlockAppForPasswordReset(session) {
+  if (!isPasswordResetPending()) return false
+  if (hasAuthCallbackInUrl()) return true
+  return Boolean(session)
 }

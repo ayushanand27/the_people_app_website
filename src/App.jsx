@@ -1,14 +1,15 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { identifyUser } from './lib/analytics'
 import {
-  shouldShowPasswordRecovery,
-  redirectRecoveryToAuth,
-  clearPasswordResetPending,
+  shouldBlockAppForPasswordReset,
+  isGoogleOAuthPending,
+  clearGoogleOAuthPending,
 } from './lib/authRecovery'
 
 import Auth from './pages/Auth'
+import ResetPassword from './pages/ResetPassword'
 
 const Onboarding      = lazy(() => import('./pages/Onboarding'))
 const Dashboard       = lazy(() => import('./pages/Dashboard'))
@@ -31,26 +32,43 @@ function PageLoader() {
 }
 
 export default function App() {
-  const [session,          setSession]          = useState(null)
-  const [profile,          setProfile]          = useState(null)
-  const [loading,          setLoading]          = useState(true)
-  const [passwordRecovery, setPasswordRecovery] = useState(false)
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/*" element={<MainApp />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
 
-  useLayoutEffect(() => {
-    redirectRecoveryToAuth()
+function MainApp() {
+  const [session, setSession] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [oauthExchanging, setOauthExchanging] = useState(false)
+
+  useEffect(() => {
+    async function handleOAuthReturn() {
+      if (!isGoogleOAuthPending()) return
+      const code = new URLSearchParams(window.location.search).get('code')
+      if (!code) return
+
+      setOauthExchanging(true)
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      clearGoogleOAuthPending()
+      if (!error) {
+        window.history.replaceState({}, '', window.location.pathname || '/')
+      }
+      setOauthExchanging(false)
+    }
+
+    handleOAuthReturn()
   }, [])
 
   useEffect(() => {
-    function handleAuthEvent(event, s) {
-      const recovering = shouldShowPasswordRecovery(s, event)
-      setPasswordRecovery(recovering)
+    function handleAuthEvent(_event, s) {
       setSession(s)
-
-      if (recovering) {
-        setLoading(false)
-        return
-      }
-
       if (s) fetchProfile(s.user.id)
       else {
         setProfile(null)
@@ -58,7 +76,6 @@ export default function App() {
       }
     }
 
-    // Single source of truth — avoids race where getSession returns old session before URL tokens parse
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       handleAuthEvent(event, s)
     })
@@ -86,51 +103,40 @@ export default function App() {
     setLoading(false)
   }
 
-  function handleRecoveryComplete() {
-    clearPasswordResetPending()
-    setPasswordRecovery(false)
-    window.history.replaceState({}, '', '/auth')
+  if (loading || oauthExchanging) return <PageLoader />
+
+  if (shouldBlockAppForPasswordReset(session)) {
+    return <Navigate to="/reset-password" replace />
   }
 
-  const showAuth = !session || passwordRecovery
-
-  const authElement = (
-    <Auth passwordRecovery={passwordRecovery} onRecoveryComplete={handleRecoveryComplete} />
-  )
-
-  if (loading) return <PageLoader />
-
   return (
-    <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={
-            passwordRecovery ? authElement :
-            !session ? <Auth /> :
-            !profile?.onboarding_complete ? <Navigate to="/onboarding" /> :
-            <Navigate to="/dashboard" />
-          } />
-          <Route path="/auth" element={
-            showAuth ? authElement : <Navigate to="/dashboard" />
-          } />
-          <Route path="/onboarding"  element={session && !passwordRecovery ? <Onboarding profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
-          <Route path="/dashboard"   element={session && !passwordRecovery ? <Dashboard profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/discover"    element={session && !passwordRecovery ? <Discover  profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/groups"      element={session && !passwordRecovery ? <Groups    profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/chat"        element={session && !passwordRecovery ? <Chat      profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/chat/:id"    element={session && !passwordRecovery ? <Chat      profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/events"      element={session && !passwordRecovery ? <Events    profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/moments"     element={session && !passwordRecovery ? <Moments   profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/profile/:id" element={session && !passwordRecovery ? <Profile   profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/settings"    element={session && !passwordRecovery ? <Settings  profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
-          <Route path="/notifications" element={session && !passwordRecovery ? <Notifications profile={profile} /> : <Navigate to="/auth" />} />
-          <Route path="/admin" element={
-            session && !passwordRecovery && profile?.is_admin
-              ? <Admin profile={profile} />
-              : <Navigate to="/dashboard" />
-          } />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={
+          !session ? <Auth /> :
+          !profile?.onboarding_complete ? <Navigate to="/onboarding" /> :
+          <Navigate to="/dashboard" />
+        } />
+        <Route path="/auth" element={
+          !session ? <Auth /> : <Navigate to="/dashboard" />
+        } />
+        <Route path="/onboarding"  element={session ? <Onboarding profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
+        <Route path="/dashboard"   element={session ? <Dashboard profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/discover"    element={session ? <Discover  profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/groups"      element={session ? <Groups    profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/chat"        element={session ? <Chat      profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/chat/:id"    element={session ? <Chat      profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/events"      element={session ? <Events    profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/moments"     element={session ? <Moments   profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/profile/:id" element={session ? <Profile   profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/settings"    element={session ? <Settings  profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
+        <Route path="/notifications" element={session ? <Notifications profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/admin" element={
+          session && profile?.is_admin
+            ? <Admin profile={profile} />
+            : <Navigate to="/dashboard" />
+        } />
+      </Routes>
+    </Suspense>
   )
 }

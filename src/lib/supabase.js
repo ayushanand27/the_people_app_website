@@ -6,7 +6,8 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     flowType: 'pkce',
-    detectSessionInUrl: true,
+    // Only /reset-password exchanges auth codes — avoids auto-login on / before redirect
+    detectSessionInUrl: false,
     persistSession: true,
   },
 })
