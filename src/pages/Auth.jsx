@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { track } from '../lib/analytics'
+import { isPasswordRecoveryUrl } from '../lib/authRecovery'
 
-export default function Auth() {
+export default function Auth({ passwordRecovery = false, onRecoveryComplete }) {
   const [email,       setEmail]       = useState('')
   const [password,    setPassword]    = useState('')
   const [newPassword, setNewPassword] = useState('')
-  const [mode,        setMode]        = useState('login')
+  const [mode,        setMode]        = useState(passwordRecovery || isPasswordRecoveryUrl() ? 'reset' : 'login')
   const [loading,     setLoading]     = useState(false)
   const [message,     setMessage]     = useState('')
 
   useEffect(() => {
+    if (passwordRecovery || isPasswordRecoveryUrl()) {
+      setMode('reset')
+    }
+
     const params = new URLSearchParams(window.location.search)
     const oauthError = params.get('error_description')
     if (oauthError) {
@@ -18,16 +23,12 @@ export default function Auth() {
       window.history.replaceState({}, '', '/auth')
     }
 
-    if (window.location.hash.includes('type=recovery')) {
-      setMode('reset')
-    }
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setMode('reset')
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [passwordRecovery])
 
   async function handleEmail(e) {
     e.preventDefault()
@@ -80,10 +81,11 @@ export default function Auth() {
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) setMessage(error.message)
     else {
-      setMessage('Password updated! You can log in now.')
+      setMessage('Password updated! Redirecting...')
+      window.history.replaceState({}, '', '/auth')
+      onRecoveryComplete?.()
       setMode('login')
       setNewPassword('')
-      window.history.replaceState({}, '', '/auth')
     }
     setLoading(false)
   }
