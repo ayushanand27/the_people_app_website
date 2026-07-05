@@ -48,13 +48,14 @@ export default function Auth() {
     setLoading(true)
     setMessage('')
 
-    // Clear saved session so the email link doesn't auto-login to dashboard
-    await supabase.auth.signOut({ scope: 'local' })
     markPasswordResetPending()
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     })
+
+    // After PKCE verifier is stored — signing out earlier is fine; signing out after would wipe it
+    if (!error) await supabase.auth.signOut({ scope: 'local' })
 
     if (error) setMessage(error.message)
     else {

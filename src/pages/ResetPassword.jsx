@@ -11,6 +11,10 @@ const inputStyle = {
   fontFamily: 'inherit', boxSizing: 'border-box',
 }
 
+const PKCE_ERROR_HINT =
+  'Open the reset link in the same browser where you tapped "Send reset link". ' +
+  'Or request a new email — the latest template works in any browser.'
+
 export default function ResetPassword() {
   const [phase, setPhase] = useState('loading')
   const [message, setMessage] = useState('')
@@ -45,27 +49,29 @@ export default function ResetPassword() {
       })
       unsubscribe = () => subscription.unsubscribe()
 
-      if (code) {
-        await supabase.auth.signOut({ scope: 'local' })
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        window.history.replaceState({}, '', '/reset-password')
-        if (error) return showError(error.message)
-
-        await new Promise(r => setTimeout(r, 50))
-        if (sawRecovery || isPasswordResetPending()) return showForm()
-        return window.location.replace('/')
-      }
-
+      // token_hash — works on any browser/device (no PKCE verifier needed)
       if (tokenHash && type === 'recovery') {
-        await supabase.auth.signOut({ scope: 'local' })
         const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
         window.history.replaceState({}, '', '/reset-password')
         if (error) return showError(error.message)
         return showForm()
       }
 
+      // PKCE code — must NOT signOut first (that deletes the code verifier)
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        window.history.replaceState({}, '', '/reset-password')
+        if (error) {
+          const isPkce = /code verifier/i.test(error.message)
+          return showError(isPkce ? PKCE_ERROR_HINT : error.message)
+        }
+
+        await new Promise(r => setTimeout(r, 50))
+        if (sawRecovery || isPasswordResetPending()) return showForm()
+        return window.location.replace('/')
+      }
+
       if (hash.includes('access_token')) {
-        await supabase.auth.signOut({ scope: 'local' })
         const hashParams = new URLSearchParams(hash.replace(/^#/, ''))
         const access_token = hashParams.get('access_token')
         const refresh_token = hashParams.get('refresh_token')
