@@ -10,6 +10,8 @@ import {
 
 import Auth from './pages/Auth'
 import ResetPassword from './pages/ResetPassword'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 
 const Onboarding      = lazy(() => import('./pages/Onboarding'))
 const Dashboard       = lazy(() => import('./pages/Dashboard'))
@@ -38,6 +40,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/*" element={<MainApp />} />
       </Routes>
     </BrowserRouter>

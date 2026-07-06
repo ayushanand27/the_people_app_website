@@ -263,6 +263,11 @@ export default function Auth() {
 
         <div style={{ textAlign: 'center', marginTop: 20, color: '#aaa', fontSize: 13, fontWeight: 600 }}>
           🔒 Your data is safe. No spam ever.
+          <div style={{ marginTop: 8 }}>
+            <a href="/privacy" style={{ color: '#FF85B3', fontWeight: 800, textDecoration: 'none' }}>Privacy</a>
+            {' · '}
+            <a href="/terms" style={{ color: '#FF85B3', fontWeight: 800, textDecoration: 'none' }}>Terms</a>
+          </div>
         </div>
       </div>
     </div>

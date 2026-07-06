@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import CityPicker from '../components/CityPicker'
 import { initCityState, resolveCity, isCityValid } from '../lib/cities'
-import { LogOut, Save, Camera } from 'lucide-react'
+import { LogOut, Save, Camera, Trash2 } from 'lucide-react'
+import { deleteAccount } from '../lib/deleteAccount'
 import { ADMIN_EMAIL, ADMIN_WHATSAPP, ADMIN_WHATSAPP_ALT } from '../lib/config'
 import { whatsappUrl } from '../lib/contact'
 
@@ -30,6 +31,8 @@ export default function Settings({ profile, setProfile }) {
   const [uploading,   setUploading]   = useState(false)
   const [saved,       setSaved]       = useState(false)
   const [error,       setError]       = useState('')
+  const [deleting,    setDeleting]    = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
 
   function toggleInterest(x) {
     setInterests(prev =>
@@ -100,6 +103,25 @@ export default function Settings({ profile, setProfile }) {
   }
 
   async function handleLogout() {
+    await supabase.auth.signOut()
+    navigate('/')
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirm !== 'DELETE') {
+      setError('Type DELETE to confirm account deletion')
+      return
+    }
+    if (!window.confirm('This permanently deletes your account and all data. This cannot be undone.')) return
+
+    setDeleting(true)
+    setError('')
+    const { error: delErr } = await deleteAccount()
+    if (delErr) {
+      setError(delErr.message || 'Could not delete account')
+      setDeleting(false)
+      return
+    }
     await supabase.auth.signOut()
     navigate('/')
   }
@@ -351,6 +373,49 @@ export default function Settings({ profile, setProfile }) {
           <Save size={20} />
           {loading ? 'Saving...' : saved ? 'Saved! ✅' : 'Save Changes'}
         </button>
+
+        {section('Legal', (
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#555', lineHeight: 1.8 }}>
+            <a href="/privacy" style={{ color: '#FF6B9D', fontWeight: 800 }}>Privacy Policy</a>
+            {' · '}
+            <a href="/terms" style={{ color: '#FF6B9D', fontWeight: 800 }}>Terms of Service</a>
+          </div>
+        ))}
+
+        {section('Delete account', (
+          <>
+            <p style={{ fontSize: 14, color: '#555', marginBottom: 12, lineHeight: 1.5 }}>
+              Permanently remove your account and profile data. This cannot be undone.
+            </p>
+            <input
+              value={deleteConfirm}
+              onChange={e => setDeleteConfirm(e.target.value)}
+              placeholder='Type DELETE to confirm'
+              style={{
+                width: '100%', padding: '12px 14px', marginBottom: 12,
+                border: '3px solid #1C1C3A', borderRadius: 14,
+                fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+              }}
+            />
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleting || deleteConfirm !== 'DELETE'}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: 8,
+                background: '#FFE0E0', color: '#CC0000',
+                border: '3px solid #CC0000', borderRadius: 50,
+                padding: '14px 20px', fontWeight: 900, fontSize: 16,
+                boxShadow: '4px 4px 0 #CC0000', cursor: 'pointer',
+                opacity: deleting || deleteConfirm !== 'DELETE' ? 0.5 : 1,
+                fontFamily: 'inherit',
+              }}
+            >
+              <Trash2 size={18} />
+              {deleting ? 'Deleting...' : 'Delete my account'}
+            </button>
+          </>
+        ))}
 
         <button onClick={handleLogout} style={{
           width: '100%', display: 'flex', alignItems: 'center',
