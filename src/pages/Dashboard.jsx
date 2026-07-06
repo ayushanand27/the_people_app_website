@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import { track } from '../lib/analytics'
 import { getBrowseCity } from '../lib/cities'
 import { fetchVerifiedListings } from '../lib/localListings'
+import { sortByMatchScore, interestMatchScore, commonInterests } from '../lib/matching'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -54,8 +55,11 @@ export default function Dashboard({ profile }) {
   async function fetchMatches(city) {
     const { data } = await supabase.from('profiles')
       .select('id,full_name,username,city,interests,avatar_url')
-      .neq('id', profile.id).eq('city', city || profile.city).limit(6)
-    setMatches(data || [])
+      .neq('id', profile.id)
+      .eq('city', city || profile.city)
+      .eq('onboarding_complete', true)
+      .limit(30)
+    setMatches(sortByMatchScore(data || [], profile.interests).slice(0, 6))
   }
 
   async function fetchGroups(city) {
@@ -73,9 +77,7 @@ export default function Dashboard({ profile }) {
   }
 
   function score(other) {
-    if (!profile?.interests || !other?.interests) return 0
-    const c = profile.interests.filter(i => other.interests?.includes(i))
-    return Math.round((c.length / Math.max(profile.interests.length, 1)) * 100)
+    return interestMatchScore(profile?.interests, other?.interests)
   }
 
   return (
@@ -108,15 +110,13 @@ export default function Dashboard({ profile }) {
           </div>
         </div>
 
-        {/* HUB QUICK LINKS */}
+        {/* HUB — Local + People only (Events/Moments in bottom nav) */}
         <div style={{
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28,
         }}>
           {[
             { label: 'Local 🏪', sub: 'Shops & services', path: '/local', bg: '#B8F0B8' },
-            { label: 'People ✨', sub: 'Discover matches', path: '/discover', bg: '#FFB3CC' },
-            { label: 'Events 🎉', sub: 'What\'s on nearby', path: '/events', bg: '#FFD699' },
-            { label: 'Moments 🎬', sub: 'City reels', path: '/moments', bg: '#B3E5FC' },
+            { label: 'People ✨', sub: 'Discover by interests', path: '/discover', bg: '#FFB3CC' },
           ].map(hub => (
             <button
               key={hub.path}
@@ -208,7 +208,7 @@ export default function Dashboard({ profile }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               {matches.map((m, i) => {
                 const s = score(m)
-                const common = profile?.interests?.filter(x => m.interests?.includes(x)) || []
+                const common = commonInterests(profile?.interests, m.interests)
                 return (
                   <button
                     key={m.id}

@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Home, Compass, Users, MessageCircle, Calendar, User, Play, Bell } from 'lucide-react'
 import { getUnreadNotificationCount } from '../lib/social'
-import { getBrowseCity, setBrowseCity, LAUNCH_CITIES } from '../lib/cities'
+import { getBrowseCity, setBrowseCity } from '../lib/cities'
+import CitySelect from './CitySelect'
 
 export default function Navbar({ active, profile }) {
   const navigate = useNavigate()
@@ -97,29 +98,12 @@ export default function Navbar({ active, profile }) {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            display: 'flex', gap: 4, background: 'white',
-            border: '2.5px solid #1C1C3A', borderRadius: 50,
-            padding: '3px 6px', boxShadow: '2px 2px 0 #1C1C3A',
-            maxWidth: '55vw', overflowX: 'auto',
-          }}>
-            {LAUNCH_CITIES.map(c => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => switchCity(c)}
-                style={{
-                  padding: '4px 8px', borderRadius: 50, border: 'none',
-                  fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
-                  background: browseCity === c ? '#FF85B3' : 'transparent',
-                  color: browseCity === c ? 'white' : '#666',
-                  whiteSpace: 'nowrap', flexShrink: 0,
-                }}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+          <CitySelect
+            compact
+            label="City"
+            value={browseCity}
+            onChange={switchCity}
+          />
           <button
             onClick={() => navigate('/notifications')}
             style={{

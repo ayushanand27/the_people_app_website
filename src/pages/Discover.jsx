@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { Search } from 'lucide-react'
+import { getBrowseCity } from '../lib/cities'
+import { interestMatchScore, commonInterests, sortByMatchScore } from '../lib/matching'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -22,8 +24,17 @@ export default function Discover({ profile }) {
   const [search,         setSearch]         = useState('')
   const [selectedInterest, setSelectedInterest] = useState('')
   const [showFilters,    setShowFilters]    = useState(false)
+  const [browseCity,     setBrowseCityState] = useState(() => getBrowseCity(profile?.city))
 
-  useEffect(() => { if (profile) fetchPeople() }, [profile, filter])
+  useEffect(() => {
+    function onCityChange(e) {
+      setBrowseCityState(e.detail || getBrowseCity(profile?.city))
+    }
+    window.addEventListener('browse-city-changed', onCityChange)
+    return () => window.removeEventListener('browse-city-changed', onCityChange)
+  }, [profile?.city])
+
+  useEffect(() => { if (profile) fetchPeople() }, [profile, filter, browseCity])
 
   async function fetchPeople() {
     setLoading(true)
@@ -31,21 +42,10 @@ export default function Discover({ profile }) {
       .select('id,full_name,username,city,interests,avatar_url,bio')
       .neq('id', profile.id)
       .eq('onboarding_complete', true)
-    if (filter === 'city') query = query.eq('city', profile.city)
-    const { data } = await query.limit(50)
-    setPeople(data || [])
+    if (filter === 'city') query = query.eq('city', browseCity)
+    const { data } = await query.limit(100)
+    setPeople(sortByMatchScore(data || [], profile.interests))
     setLoading(false)
-  }
-
-  function score(other) {
-    if (!profile?.interests || !other?.interests) return 0
-    const c = profile.interests.filter(i => other.interests?.includes(i))
-    return Math.round((c.length / Math.max(profile.interests.length, 1)) * 100)
-  }
-
-  function common(other) {
-    if (!profile?.interests || !other?.interests) return []
-    return profile.interests.filter(i => other.interests?.includes(i))
   }
 
   // CLIENT SIDE FILTERING
@@ -62,7 +62,7 @@ export default function Discover({ profile }) {
 
       return matchSearch && matchInterest
     })
-    .sort((a, b) => score(b) - score(a))
+    .sort((a, b) => interestMatchScore(profile?.interests, b.interests) - interestMatchScore(profile?.interests, a.interests))
 
   return (
     <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
@@ -116,7 +116,7 @@ export default function Discover({ profile }) {
               boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer',
               fontFamily: 'inherit'
             }}>
-              {f === 'all' ? '🌍 Everyone' : `📍 ${profile?.city}`}
+              {f === 'all' ? '🌍 Everyone' : `📍 ${browseCity}`}
             </button>
           ))}
 
@@ -208,8 +208,8 @@ export default function Discover({ profile }) {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             {filtered.map((p, i) => {
-              const s = score(p)
-              const c = common(p)
+              const s = interestMatchScore(profile?.interests, p.interests)
+              const c = commonInterests(profile?.interests, p.interests)
               return (
                 <button key={p.id} onClick={() => navigate(`/profile/${p.id}`)}
                   style={{
