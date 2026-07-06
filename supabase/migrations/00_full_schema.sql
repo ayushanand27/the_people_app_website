@@ -257,12 +257,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 GRANT EXECUTE ON FUNCTION increment_video_views(UUID) TO authenticated;
 
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-REVOKE ALL ON FUNCTION public.increment_video_views(UUID) FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.increment_video_views(UUID) FROM anon;
-GRANT EXECUTE ON FUNCTION public.increment_video_views(UUID) TO authenticated;
-
 -- ════════════════════════════════════════════════════════════════════════════
 -- RATE LIMITING
 -- ════════════════════════════════════════════════════════════════════════════

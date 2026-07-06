@@ -1,5 +1,17 @@
+-- ════════════════════════════════════════════════════════════════════════════
+-- ⚠️  DEV / STAGING ONLY — NEVER RUN IN PRODUCTION
+-- ════════════════════════════════════════════════════════════════════════════
+--
+-- This script creates real auth.users rows with a KNOWN password (DemoSeedOnly!).
+-- It was mistakenly applied to production once and had to be cleaned up via:
+--   supabase/scripts/remove_demo_users_production.sql
+--
+-- Usage: run manually in a local or staging Supabase SQL editor only.
+-- Do NOT place this file in supabase/migrations/ — it will auto-apply on deploy.
+-- ════════════════════════════════════════════════════════════════════════════
+
 -- Demo profiles for Discover / matches (idempotent)
--- Creates auth users + profile rows; passwords are random — demo accounts are view-only via app
+-- Creates auth users + profile rows for local/staging testing only.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
