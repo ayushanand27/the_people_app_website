@@ -8,6 +8,7 @@ import { fetchVerifiedListings } from '../lib/localListings'
 import { sortByMatchScore, interestMatchScore, commonInterests } from '../lib/matching'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
+import { useBrowseCity } from '../hooks/useBrowseCity'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -18,7 +19,7 @@ export default function Dashboard({ profile }) {
   const [groups,  setGroups]  = useState([])
   const [events,  setEvents]  = useState([])
   const [localPreview, setLocalPreview] = useState([])
-  const [browseCity, setBrowseCity] = useState(() => getBrowseCity(profile?.city))
+  const browseCity = useBrowseCity(profile?.city)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
@@ -62,22 +63,8 @@ export default function Dashboard({ profile }) {
   }
 
   useEffect(() => {
-    if (profile) {
-      const city = getBrowseCity(profile.city)
-      setBrowseCity(city)
-      loadDashboard(city)
-    }
-  }, [profile])
-
-  useEffect(() => {
-    function onCityChange(e) {
-      const city = e.detail || getBrowseCity(profile?.city)
-      setBrowseCity(city)
-      loadDashboard(city)
-    }
-    window.addEventListener('browse-city-changed', onCityChange)
-    return () => window.removeEventListener('browse-city-changed', onCityChange)
-  }, [profile])
+    if (profile) loadDashboard(browseCity)
+  }, [profile, browseCity])
 
   function score(other) {
     return interestMatchScore(profile?.interests, other?.interests)

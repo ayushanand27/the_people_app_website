@@ -1,22 +1,35 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Navbar from '../components/Navbar'
+import InlineError from '../components/InlineError'
+import { reportSupabaseError } from '../lib/supabaseError'
+import { useBrowseCity } from '../hooks/useBrowseCity'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
 
 export default function Groups({ profile }) {
+  const browseCity = useBrowseCity(profile?.city)
   const [groups,  setGroups]  = useState([])
   const [joined,  setJoined]  = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [tab,     setTab]     = useState('all')
 
-  useEffect(() => { if (profile) { fetchGroups(); fetchJoined() } }, [profile])
+  useEffect(() => { if (profile) { fetchGroups(); fetchJoined() } }, [profile, browseCity])
 
   async function fetchGroups() {
-    const { data } = await supabase.from('groups')
+    setLoading(true)
+    setLoadError('')
+    const { data, error } = await supabase.from('groups')
       .select('*, group_members(count)')
-    setGroups(data || [])
+      .eq('city', browseCity)
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Groups') || 'Failed to load groups')
+      setGroups([])
+    } else {
+      setGroups(data || [])
+    }
     setLoading(false)
   }
 
@@ -45,9 +58,11 @@ export default function Groups({ profile }) {
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>Communities 🏘️</div>
-          <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Find your tribe</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>Communities in {browseCity} 🏘️</div>
+          <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Find your tribe · {browseCity}</div>
         </div>
+
+        <InlineError message={loadError} onRetry={fetchGroups} />
 
         {/* TABS */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
@@ -74,7 +89,7 @@ export default function Groups({ profile }) {
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🏘️</div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>
-              {tab === 'joined' ? "You haven't joined any groups" : 'No communities yet'}
+              {tab === 'joined' ? "You haven't joined any groups in this city" : `No communities in ${browseCity} yet`}
             </div>
             <div style={{ color: '#aaa', marginTop: 6 }}>Check back soon!</div>
           </div>

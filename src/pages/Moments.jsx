@@ -24,6 +24,7 @@ import { moderateUploadText } from '../lib/ai'
 import { track } from '../lib/analytics'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
+import { useBrowseCity } from '../hooks/useBrowseCity'
 
 const PAGE_SIZE = 10
 
@@ -35,6 +36,7 @@ function formatDuration(seconds) {
 
 export default function Moments({ profile }) {
   const navigate = useNavigate()
+  const browseCity = useBrowseCity(profile?.city)
   const [searchParams, setSearchParams] = useSearchParams()
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -92,7 +94,8 @@ export default function Moments({ profile }) {
 
     let query = supabase
       .from('videos')
-      .select('*, profiles(full_name, username, avatar_url)')
+      .select('*, profiles!inner(full_name, username, avatar_url, city)')
+      .eq('profiles.city', browseCity)
       .order('created_at', { ascending: false })
       .limit(PAGE_SIZE)
 
@@ -136,7 +139,7 @@ export default function Moments({ profile }) {
     setVideos(prev => (append ? [...prev, ...batch] : batch))
     setLoading(false)
     setLoadingMore(false)
-  }, [feedTab, followingIds, bookmarked, blockedIds])
+  }, [feedTab, followingIds, bookmarked, blockedIds, browseCity])
 
   useEffect(() => {
     async function init() {
@@ -433,7 +436,7 @@ export default function Moments({ profile }) {
         padding: '16px 20px',
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)',
       }}>
-        <div style={{ color: 'white', fontWeight: 900, fontSize: 22 }}>✨ Moments</div>
+        <div style={{ color: 'white', fontWeight: 900, fontSize: 22 }}>✨ Moments · {browseCity}</div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {['foryou', 'following', 'saved'].map(tab => (
             <button key={tab} onClick={() => setFeedTab(tab)} style={{
@@ -497,7 +500,7 @@ export default function Moments({ profile }) {
       ) : videos.length === 0 ? (
         <div style={{ ...centerStyle, flexDirection: 'column' }}>
           <div style={{ fontSize: 60, marginBottom: 16 }}>🎬</div>
-          <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 8 }}>No Moments yet</div>
+          <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 8 }}>No Moments in {browseCity} yet</div>
           <div style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 24 }}>Be the first to share!</div>
           <button onClick={() => setShowUpload(true)} style={uploadBtnStyle}>Upload First Moment 🚀</button>
         </div>

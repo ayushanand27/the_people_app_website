@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { Search } from 'lucide-react'
-import { getBrowseCity } from '../lib/cities'
+import { useBrowseCity } from '../hooks/useBrowseCity'
 import { interestMatchScore, commonInterests, sortByMatchScore } from '../lib/matching'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
@@ -24,25 +24,16 @@ export default function Discover({ profile }) {
   const navigate = useNavigate()
   const [people,         setPeople]         = useState([])
   const [loading,        setLoading]        = useState(true)
-  const [filter,         setFilter]         = useState('all')
   const [search,         setSearch]         = useState('')
   const [selectedInterest, setSelectedInterest] = useState('')
   const [showFilters,    setShowFilters]    = useState(false)
-  const [browseCity,     setBrowseCityState] = useState(() => getBrowseCity(profile?.city))
+  const browseCity = useBrowseCity(profile?.city)
   const [loadError,      setLoadError]       = useState('')
   const [hasMore,        setHasMore]         = useState(true)
   const [loadingMore,    setLoadingMore]     = useState(false)
   const [page,           setPage]            = useState(0)
 
-  useEffect(() => {
-    function onCityChange(e) {
-      setBrowseCityState(e.detail || getBrowseCity(profile?.city))
-    }
-    window.addEventListener('browse-city-changed', onCityChange)
-    return () => window.removeEventListener('browse-city-changed', onCityChange)
-  }, [profile?.city])
-
-  useEffect(() => { if (profile) fetchPeople(false) }, [profile, filter, browseCity])
+  useEffect(() => { if (profile) fetchPeople(false) }, [profile, browseCity])
 
   async function fetchPeople(append = false) {
     if (append) setLoadingMore(true)
@@ -60,7 +51,7 @@ export default function Discover({ profile }) {
       .select('id,full_name,username,city,interests,avatar_url,bio')
       .neq('id', profile.id)
       .eq('onboarding_complete', true)
-    if (filter === 'city') query = query.eq('city', browseCity)
+      .eq('city', browseCity)
     const { data, error } = await query.range(from, to)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Discover') || 'Failed to load people')
@@ -105,8 +96,8 @@ export default function Discover({ profile }) {
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>Discover People 🔍</div>
-          <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Find people who get you</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>People in {browseCity} 🔍</div>
+          <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Discover by interests · {browseCity}</div>
         </div>
 
         <InlineError message={loadError} onRetry={() => fetchPeople(false)} />
@@ -141,21 +132,8 @@ export default function Discover({ profile }) {
           )}
         </div>
 
-        {/* FILTERS ROW */}
+        {/* INTEREST FILTER */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-          {['all','city'].map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{
-              padding: '8px 16px', borderRadius: 50,
-              border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
-              background: filter === f ? '#FF85B3' : 'white',
-              color: filter === f ? 'white' : '#1C1C3A',
-              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer',
-              fontFamily: 'inherit'
-            }}>
-              {f === 'all' ? '🌍 Everyone' : `📍 ${browseCity}`}
-            </button>
-          ))}
-
           <button
             onClick={() => setShowFilters(!showFilters)}
             style={{
@@ -232,7 +210,7 @@ export default function Discover({ profile }) {
               {search ? `No one matching "${search}"` : 'Try a different filter'}
             </div>
             <button
-              onClick={() => { setSearch(''); setSelectedInterest(''); setFilter('all') }}
+              onClick={() => { setSearch(''); setSelectedInterest('') }}
               style={{
                 marginTop: 16, background: '#FF85B3', color: 'white',
                 border: '3px solid #1C1C3A', borderRadius: 50,

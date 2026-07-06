@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { Search } from 'lucide-react'
-import { getBrowseCity } from '../lib/cities'
+import { useBrowseCity } from '../hooks/useBrowseCity'
 import {
   LISTING_CATEGORIES,
   categoryEmoji,
@@ -14,7 +14,7 @@ const BG = ['#FFB3CC', '#B8F0B8', '#B3E5FC', '#FFD699', '#E8D5FF', '#FFE566']
 
 export default function Local({ profile }) {
   const navigate = useNavigate()
-  const [browseCity, setBrowseCityState] = useState(() => getBrowseCity(profile?.city))
+  const browseCity = useBrowseCity(profile?.city)
   const [category, setCategory] = useState('all')
   const [search, setSearch] = useState('')
   const [listings, setListings] = useState([])
@@ -37,14 +37,6 @@ export default function Local({ profile }) {
   }, [browseCity, category, search])
 
   useEffect(() => { load() }, [load])
-
-  useEffect(() => {
-    function onCityChange(e) {
-      setBrowseCityState(e.detail || getBrowseCity(profile?.city))
-    }
-    window.addEventListener('browse-city-changed', onCityChange)
-    return () => window.removeEventListener('browse-city-changed', onCityChange)
-  }, [profile?.city])
 
   return (
     <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>

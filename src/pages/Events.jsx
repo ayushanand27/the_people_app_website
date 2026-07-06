@@ -1,23 +1,37 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Navbar from '../components/Navbar'
+import InlineError from '../components/InlineError'
+import { reportSupabaseError } from '../lib/supabaseError'
+import { useBrowseCity } from '../hooks/useBrowseCity'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 
 export default function Events({ profile }) {
+  const browseCity = useBrowseCity(profile?.city)
   const [events,  setEvents]  = useState([])
   const [rsvpd,   setRsvpd]   = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [tab,     setTab]     = useState('upcoming')
 
-  useEffect(() => { if (profile) { fetchEvents(); fetchRsvpd() } }, [profile, tab])
+  useEffect(() => { if (profile) { fetchEvents(); fetchRsvpd() } }, [profile, tab, browseCity])
 
   async function fetchEvents() {
     setLoading(true)
-    let q = supabase.from('events').select('*, event_attendees(count)').order('date', { ascending: true })
+    setLoadError('')
+    let q = supabase.from('events')
+      .select('*, event_attendees(count)')
+      .eq('city', browseCity)
+      .order('date', { ascending: true })
     if (tab === 'upcoming') q = q.gte('date', new Date().toISOString())
-    const { data } = await q.limit(20)
-    setEvents(data || [])
+    const { data, error } = await q.limit(20)
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Events') || 'Failed to load events')
+      setEvents([])
+    } else {
+      setEvents(data || [])
+    }
     setLoading(false)
   }
 
@@ -43,9 +57,11 @@ export default function Events({ profile }) {
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>Events 🎉</div>
-          <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Meet your people IRL</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>Events in {browseCity} 🎉</div>
+          <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Meet your people IRL · {browseCity}</div>
         </div>
+
+        <InlineError message={loadError} onRetry={fetchEvents} />
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
           {['upcoming','all'].map(t => (
@@ -70,7 +86,7 @@ export default function Events({ profile }) {
             boxShadow: '5px 5px 0 #1C1C3A'
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
-            <div style={{ fontWeight: 900, fontSize: 18 }}>No events yet</div>
+            <div style={{ fontWeight: 900, fontSize: 18 }}>No events in {browseCity} yet</div>
             <div style={{ color: '#aaa', marginTop: 6 }}>Events coming soon!</div>
           </div>
         ) : (
