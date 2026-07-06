@@ -57,8 +57,14 @@ export default function Auth() {
     // After PKCE verifier is stored — signing out earlier is fine; signing out after would wipe it
     if (!error) await supabase.auth.signOut({ scope: 'local' })
 
-    if (error) setMessage(error.message)
-    else {
+    if (error) {
+      const isSmtpLimit = /error sending recovery email|unexpected_failure/i.test(error.message)
+      setMessage(
+        isSmtpLimit
+          ? 'Email could not be sent. Resend test mode only delivers to your Resend signup email (ayush.23fe10cii00144@muj.manipal.edu). Turn off Custom SMTP in Supabase to use default email for Gmail, or verify a domain on Resend for all users.'
+          : error.message
+      )
+    } else {
       setMessage('Password reset link sent! Check your email (open link in browser if using Gmail app).')
     }
 
