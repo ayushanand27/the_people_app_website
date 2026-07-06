@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { track } from '../lib/analytics'
+import { getBrowseCity } from '../lib/cities'
+import { fetchVerifiedListings } from '../lib/localListings'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -12,26 +14,59 @@ export default function Dashboard({ profile }) {
   const [matches, setMatches] = useState([])
   const [groups,  setGroups]  = useState([])
   const [events,  setEvents]  = useState([])
+  const [localPreview, setLocalPreview] = useState([])
+  const [browseCity, setBrowseCity] = useState(() => getBrowseCity(profile?.city))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (profile) { fetchMatches(); fetchGroups(); fetchEvents() }
+    if (profile) {
+      const city = getBrowseCity(profile.city)
+      setBrowseCity(city)
+      fetchMatches(city)
+      fetchGroups(city)
+      fetchEvents(city)
+      fetchLocal(city)
+    }
   }, [profile])
 
-  async function fetchMatches() {
+  useEffect(() => {
+    function onCityChange(e) {
+      const city = e.detail || getBrowseCity(profile?.city)
+      setBrowseCity(city)
+      fetchMatches(city)
+      fetchGroups(city)
+      fetchEvents(city)
+      fetchLocal(city)
+    }
+    window.addEventListener('browse-city-changed', onCityChange)
+    return () => window.removeEventListener('browse-city-changed', onCityChange)
+  }, [profile])
+
+  async function fetchLocal(city) {
+    try {
+      const data = await fetchVerifiedListings({ city, category: 'all', limit: 3 })
+      setLocalPreview(data)
+    } catch {
+      setLocalPreview([])
+    }
+  }
+
+  async function fetchMatches(city) {
     const { data } = await supabase.from('profiles')
       .select('id,full_name,username,city,interests,avatar_url')
-      .neq('id', profile.id).eq('city', profile.city).limit(6)
+      .neq('id', profile.id).eq('city', city || profile.city).limit(6)
     setMatches(data || [])
   }
 
-  async function fetchGroups() {
-    const { data } = await supabase.from('groups').select('*').limit(3)
+  async function fetchGroups(city) {
+    const { data } = await supabase.from('groups').select('*')
+      .eq('city', city || profile.city).limit(3)
     setGroups(data || [])
   }
 
-  async function fetchEvents() {
+  async function fetchEvents(city) {
     const { data } = await supabase.from('events').select('*')
+      .eq('city', city || profile.city)
       .gte('date', new Date().toISOString()).limit(3)
     setEvents(data || [])
     setLoading(false)
@@ -59,7 +94,7 @@ export default function Dashboard({ profile }) {
             Hey {profile?.full_name?.split(' ')[0]} 👋
           </div>
           <div style={{ color: 'rgba(255,255,255,0.85)', marginTop: 4, fontSize: 15 }}>
-            {profile?.city} · {profile?.interests?.length || 0} interests
+            Browsing {browseCity} · {profile?.interests?.length || 0} interests
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
             {profile?.interests?.slice(0,3).map(i => (
@@ -71,6 +106,76 @@ export default function Dashboard({ profile }) {
               }}>{i}</span>
             ))}
           </div>
+        </div>
+
+        {/* HUB QUICK LINKS */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28,
+        }}>
+          {[
+            { label: 'Local 🏪', sub: 'Shops & services', path: '/local', bg: '#B8F0B8' },
+            { label: 'People ✨', sub: 'Discover matches', path: '/discover', bg: '#FFB3CC' },
+            { label: 'Events 🎉', sub: 'What\'s on nearby', path: '/events', bg: '#FFD699' },
+            { label: 'Moments 🎬', sub: 'City reels', path: '/moments', bg: '#B3E5FC' },
+          ].map(hub => (
+            <button
+              key={hub.path}
+              type="button"
+              onClick={() => navigate(hub.path)}
+              style={{
+                background: hub.bg, border: '3px solid #1C1C3A',
+                borderRadius: 20, padding: '18px 16px', textAlign: 'left',
+                cursor: 'pointer', boxShadow: '5px 5px 0 #1C1C3A',
+                fontFamily: 'inherit',
+              }}
+            >
+              <div style={{ fontWeight: 900, fontSize: 16 }}>{hub.label}</div>
+              <div style={{ fontSize: 12, color: '#555', marginTop: 4, fontWeight: 600 }}>{hub.sub}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* LOCAL PREVIEW */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ fontSize: 20, fontWeight: 900 }}>Local in {browseCity} 🏪</div>
+            <button
+              onClick={() => navigate('/local')}
+              style={{ color: '#4CAF82', fontWeight: 700, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              See all →
+            </button>
+          </div>
+          {localPreview.length === 0 ? (
+            <div style={{
+              background: 'white', border: '3px solid #1C1C3A',
+              borderRadius: 20, padding: '28px 20px', textAlign: 'center',
+              boxShadow: '4px 4px 0 #1C1C3A',
+            }}>
+              <div style={{ fontWeight: 900 }}>No local listings yet</div>
+              <div style={{ color: '#aaa', fontSize: 14, marginTop: 4 }}>Verified shops coming soon</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {localPreview.map((item, i) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => navigate(`/local/${item.id}`)}
+                  style={{
+                    background: BG[i % BG.length], border: '3px solid #1C1C3A',
+                    borderRadius: 16, padding: '14px 16px', textAlign: 'left',
+                    cursor: 'pointer', boxShadow: '4px 4px 0 #1C1C3A', fontFamily: 'inherit',
+                  }}
+                >
+                  <div style={{ fontWeight: 900 }}>{item.title}</div>
+                  {item.price_text && (
+                    <div style={{ color: '#4CAF82', fontWeight: 800, fontSize: 14, marginTop: 4 }}>{item.price_text}</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* DAILY MATCHES */}

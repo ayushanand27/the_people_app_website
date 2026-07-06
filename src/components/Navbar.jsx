@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Home, Compass, Users, MessageCircle, Calendar, User, Play, Bell } from 'lucide-react'
 import { getUnreadNotificationCount } from '../lib/social'
+import { getBrowseCity, setBrowseCity, LAUNCH_CITIES } from '../lib/cities'
 
 export default function Navbar({ active, profile }) {
   const navigate = useNavigate()
   const [unread, setUnread] = useState(0)
   const [notifCount, setNotifCount] = useState(0)
+  const [browseCity, setBrowseCityState] = useState(() => getBrowseCity(profile?.city))
 
   useEffect(() => {
     if (!profile) return
@@ -20,6 +22,20 @@ export default function Navbar({ active, profile }) {
       .subscribe()
     return () => { cleanup?.(); supabase.removeChannel(ch) }
   }, [profile])
+
+  useEffect(() => {
+    setBrowseCityState(getBrowseCity(profile?.city))
+    function onCityChange(e) {
+      setBrowseCityState(e.detail || getBrowseCity(profile?.city))
+    }
+    window.addEventListener('browse-city-changed', onCityChange)
+    return () => window.removeEventListener('browse-city-changed', onCityChange)
+  }, [profile?.city])
+
+  function switchCity(city) {
+    setBrowseCity(city)
+    setBrowseCityState(city)
+  }
 
   async function fetchNotifCount() {
     setNotifCount(await getUnreadNotificationCount(profile.id))
@@ -80,7 +96,30 @@ export default function Navbar({ active, profile }) {
             The People App
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            display: 'flex', gap: 4, background: 'white',
+            border: '2.5px solid #1C1C3A', borderRadius: 50,
+            padding: '3px 6px', boxShadow: '2px 2px 0 #1C1C3A',
+            maxWidth: '55vw', overflowX: 'auto',
+          }}>
+            {LAUNCH_CITIES.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => switchCity(c)}
+                style={{
+                  padding: '4px 8px', borderRadius: 50, border: 'none',
+                  fontSize: 10, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+                  background: browseCity === c ? '#FF85B3' : 'transparent',
+                  color: browseCity === c ? 'white' : '#666',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
           <button
             onClick={() => navigate('/notifications')}
             style={{

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2 } from 'lucide-react'
 import AdminReportsTab from './admin/AdminReportsTab'
+import AdminListingsTab from './admin/AdminListingsTab'
 import CityPicker from '../components/CityPicker'
 import { resolveCity, isCityValid } from '../lib/cities'
 
@@ -249,7 +250,7 @@ export default function Admin({ profile }) {
 
         {/* TABS */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          {['groups','events','users','reports'].map(t => (
+          {['groups','events','listings','users','reports'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '10px 20px', borderRadius: 50,
               border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
@@ -260,6 +261,7 @@ export default function Admin({ profile }) {
             }}>{
               t === 'groups' ? '🏘️ Groups'
               : t === 'events' ? '🎉 Events'
+              : t === 'listings' ? '🏪 Listings'
               : t === 'users' ? '👥 Users'
               : `🛡️ Reports${pendingReports ? ` (${pendingReports})` : ''}`
             }</button>
@@ -519,6 +521,15 @@ export default function Admin({ profile }) {
               </button>
             )}
           </div>
+        )}
+
+        {/* LISTINGS TAB */}
+        {tab === 'listings' && (
+          <AdminListingsTab
+            profile={profile}
+            onSuccess={msg => { showSuccess(msg); fetchAll() }}
+            onError={msg => setError(msg)}
+          />
         )}
 
         {/* REPORTS TAB */}

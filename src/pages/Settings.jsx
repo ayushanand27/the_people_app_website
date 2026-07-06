@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar'
 import CityPicker from '../components/CityPicker'
 import { initCityState, resolveCity, isCityValid } from '../lib/cities'
 import { LogOut, Save, Camera } from 'lucide-react'
+import { ADMIN_EMAIL, ADMIN_WHATSAPP, ADMIN_WHATSAPP_ALT } from '../lib/config'
+import { whatsappUrl } from '../lib/contact'
 
 const INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
@@ -239,6 +241,58 @@ export default function Settings({ profile, setProfile }) {
             ))}
           </div>
         ))}
+
+        {/* LIST YOUR BUSINESS */}
+        <div style={{
+          background: '#B8F0B8', border: '3px solid #1C1C3A',
+          borderRadius: 20, padding: 20,
+          boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16,
+        }}>
+          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>🏪 List your business</div>
+          <div style={{ color: '#555', fontSize: 14, marginBottom: 14, lineHeight: 1.5 }}>
+            Want to list your shop, hotel, or service? Contact us to get verified on The People App.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <a
+              href={whatsappUrl(ADMIN_WHATSAPP, 'Hi, I want to list my business on The People App.')}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block', textAlign: 'center', textDecoration: 'none',
+                background: '#25D366', color: 'white',
+                border: '3px solid #1C1C3A', borderRadius: 50,
+                padding: '14px 20px', fontWeight: 900, fontSize: 15,
+                boxShadow: '4px 4px 0 #1C1C3A',
+              }}
+            >
+              WhatsApp us →
+            </a>
+            <a
+              href={whatsappUrl(ADMIN_WHATSAPP_ALT, 'Hi, I want to list my business on The People App.')}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block', textAlign: 'center', textDecoration: 'none',
+                background: 'white', color: '#1C1C3A',
+                border: '3px solid #1C1C3A', borderRadius: 50,
+                padding: '12px 20px', fontWeight: 800, fontSize: 14,
+              }}
+            >
+              Alt WhatsApp: {ADMIN_WHATSAPP_ALT}
+            </a>
+            <a
+              href={`mailto:${ADMIN_EMAIL}?subject=List my business on The People App`}
+              style={{
+                display: 'block', textAlign: 'center', textDecoration: 'none',
+                background: 'white', color: '#FF85B3',
+                border: '3px solid #1C1C3A', borderRadius: 50,
+                padding: '12px 20px', fontWeight: 800, fontSize: 14,
+              }}
+            >
+              Email: {ADMIN_EMAIL}
+            </a>
+          </div>
+        </div>
 
         {/* PREMIUM */}
         <div style={{
