@@ -30,4 +30,18 @@ export default defineConfig([
       'react-hooks/preserve-manual-memoization': 'warn',
     },
   },
+  {
+    files: ['**/*.test.{js,jsx}', 'src/test/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        vi: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+      },
+    },
+  },
 ])

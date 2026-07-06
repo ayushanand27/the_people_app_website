@@ -12,32 +12,6 @@ export default function Navbar({ active, profile }) {
   const [notifCount, setNotifCount] = useState(0)
   const [browseCity, setBrowseCityState] = useState(() => getBrowseCity(profile?.city))
 
-  useEffect(() => {
-    if (!profile) return
-    fetchUnread()
-    fetchNotifCount()
-    const cleanup = subscribeUnread()
-    const ch = supabase.channel('notifs')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' },
-        payload => { if (payload.new.user_id === profile.id) setNotifCount(c => c + 1) })
-      .subscribe()
-    return () => { cleanup?.(); supabase.removeChannel(ch) }
-  }, [profile])
-
-  useEffect(() => {
-    setBrowseCityState(getBrowseCity(profile?.city))
-    function onCityChange(e) {
-      setBrowseCityState(e.detail || getBrowseCity(profile?.city))
-    }
-    window.addEventListener('browse-city-changed', onCityChange)
-    return () => window.removeEventListener('browse-city-changed', onCityChange)
-  }, [profile?.city])
-
-  function switchCity(city) {
-    setBrowseCity(city)
-    setBrowseCityState(city)
-  }
-
   async function fetchNotifCount() {
     setNotifCount(await getUnreadNotificationCount(profile.id))
   }
@@ -62,6 +36,32 @@ export default function Navbar({ active, profile }) {
       })
       .subscribe()
     return () => supabase.removeChannel(ch)
+  }
+
+  useEffect(() => {
+    if (!profile) return
+    fetchUnread()
+    fetchNotifCount()
+    const cleanup = subscribeUnread()
+    const ch = supabase.channel('notifs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' },
+        payload => { if (payload.new.user_id === profile.id) setNotifCount(c => c + 1) })
+      .subscribe()
+    return () => { cleanup?.(); supabase.removeChannel(ch) }
+  }, [profile])
+
+  useEffect(() => {
+    setBrowseCityState(getBrowseCity(profile?.city))
+    function onCityChange(e) {
+      setBrowseCityState(e.detail || getBrowseCity(profile?.city))
+    }
+    window.addEventListener('browse-city-changed', onCityChange)
+    return () => window.removeEventListener('browse-city-changed', onCityChange)
+  }, [profile?.city])
+
+  function switchCity(city) {
+    setBrowseCity(city)
+    setBrowseCityState(city)
   }
 
   const tabs = [

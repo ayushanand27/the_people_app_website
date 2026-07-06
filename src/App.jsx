@@ -72,23 +72,6 @@ function MainApp() {
     handleOAuthReturn()
   }, [])
 
-  useEffect(() => {
-    function handleAuthEvent(_event, s) {
-      setSession(s)
-      if (s) fetchProfile(s.user.id)
-      else {
-        setProfile(null)
-        setLoading(false)
-      }
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      handleAuthEvent(event, s)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
   async function fetchProfile(userId) {
     const { data } = await supabase
       .from('profiles')
@@ -108,6 +91,23 @@ function MainApp() {
     if (data?.id) identifyUser(data.id)
     setLoading(false)
   }
+
+  useEffect(() => {
+    function handleAuthEvent(_event, s) {
+      setSession(s)
+      if (s) fetchProfile(s.user.id)
+      else {
+        setProfile(null)
+        setLoading(false)
+      }
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      handleAuthEvent(event, s)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   if (loading || oauthExchanging) return <PageLoader />
 
