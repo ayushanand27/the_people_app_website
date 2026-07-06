@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Heart, MessageCircle, Upload, X, Volume2, VolumeX, Trash2, Share2, Bookmark, Flag, Ban } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import {
@@ -22,6 +22,8 @@ import {
 } from '../lib/social'
 import { moderateUploadText } from '../lib/ai'
 import { track } from '../lib/analytics'
+import InlineError from '../components/InlineError'
+import { reportSupabaseError } from '../lib/supabaseError'
 
 const PAGE_SIZE = 10
 
@@ -33,8 +35,10 @@ function formatDuration(seconds) {
 
 export default function Moments({ profile }) {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -62,10 +66,14 @@ export default function Moments({ profile }) {
   const viewedRef = useRef(new Set())
   const lastTapRef = useRef(0)
   const cursorRef = useRef(null)
+  const deepLinkHandled = useRef(false)
 
   const fetchVideos = useCallback(async (append = false) => {
     if (append) setLoadingMore(true)
-    else setLoading(true)
+    else {
+      setLoading(true)
+      setLoadError('')
+    }
 
     let query = supabase
       .from('videos')
@@ -80,7 +88,7 @@ export default function Moments({ profile }) {
     const { data, error } = await query
 
     if (error) {
-      console.error('Failed to load videos:', error.message)
+      setLoadError(reportSupabaseError(error, 'Moments feed') || 'Failed to load videos')
       setLoading(false)
       setLoadingMore(false)
       return
@@ -132,8 +140,51 @@ export default function Moments({ profile }) {
 
   useEffect(() => {
     cursorRef.current = null
+    setLoadError('')
     fetchVideos()
   }, [feedTab, followingIds, bookmarked, blockedIds, fetchVideos])
+
+  // Deep link: /moments?v=<videoId> from notifications or share
+  useEffect(() => {
+    const videoId = searchParams.get('v')
+    if (!videoId) {
+      deepLinkHandled.current = false
+      return
+    }
+    if (deepLinkHandled.current || loading) return
+
+    async function openDeepLink() {
+      let idx = videos.findIndex(v => v.id === videoId)
+      if (idx < 0) {
+        const { data, error } = await supabase
+          .from('videos')
+          .select('*, profiles(full_name, username, avatar_url)')
+          .eq('id', videoId)
+          .single()
+        if (error || !data) {
+          setLoadError(reportSupabaseError(error, 'Moments deep link') || 'Video not found')
+          deepLinkHandled.current = true
+          setSearchParams({}, { replace: true })
+          return
+        }
+        setVideos(prev => [data, ...prev.filter(v => v.id !== videoId)])
+        return
+      }
+
+      deepLinkHandled.current = true
+      setSearchParams({}, { replace: true })
+      setActiveIdx(idx)
+
+      requestAnimationFrame(() => {
+        const container = feedRef.current
+        const target = container?.children[idx]
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        videoRefs.current[idx]?.play().catch(() => {})
+      })
+    }
+
+    openDeepLink()
+  }, [videos, loading, searchParams, setSearchParams])
 
   async function fetchLiked() {
     const { data } = await supabase
@@ -424,6 +475,10 @@ export default function Moments({ profile }) {
       {/* FEED */}
       {loading ? (
         <div style={centerStyle}>Loading Moments... ✨</div>
+      ) : loadError && videos.length === 0 ? (
+        <div style={{ ...centerStyle, padding: 24 }}>
+          <InlineError message={loadError} onRetry={() => { setLoadError(''); fetchVideos() }} />
+        </div>
       ) : videos.length === 0 ? (
         <div style={{ ...centerStyle, flexDirection: 'column' }}>
           <div style={{ fontSize: 60, marginBottom: 16 }}>🎬</div>

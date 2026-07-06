@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar'
 import { Search } from 'lucide-react'
 import { getBrowseCity } from '../lib/cities'
 import { interestMatchScore, commonInterests, sortByMatchScore } from '../lib/matching'
+import InlineError from '../components/InlineError'
+import { reportSupabaseError } from '../lib/supabaseError'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -25,6 +27,7 @@ export default function Discover({ profile }) {
   const [selectedInterest, setSelectedInterest] = useState('')
   const [showFilters,    setShowFilters]    = useState(false)
   const [browseCity,     setBrowseCityState] = useState(() => getBrowseCity(profile?.city))
+  const [loadError,      setLoadError]       = useState('')
 
   useEffect(() => {
     function onCityChange(e) {
@@ -38,13 +41,19 @@ export default function Discover({ profile }) {
 
   async function fetchPeople() {
     setLoading(true)
+    setLoadError('')
     let query = supabase.from('profiles')
       .select('id,full_name,username,city,interests,avatar_url,bio')
       .neq('id', profile.id)
       .eq('onboarding_complete', true)
     if (filter === 'city') query = query.eq('city', browseCity)
-    const { data } = await query.limit(100)
-    setPeople(sortByMatchScore(data || [], profile.interests))
+    const { data, error } = await query.limit(100)
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Discover') || 'Failed to load people')
+      setPeople([])
+    } else {
+      setPeople(sortByMatchScore(data || [], profile.interests))
+    }
     setLoading(false)
   }
 
@@ -74,6 +83,8 @@ export default function Discover({ profile }) {
           <div style={{ fontSize: 26, fontWeight: 900 }}>Discover People 🔍</div>
           <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Find people who get you</div>
         </div>
+
+        <InlineError message={loadError} onRetry={fetchPeople} />
 
         {/* SEARCH BAR */}
         <div style={{

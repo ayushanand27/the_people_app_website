@@ -6,6 +6,8 @@ import { track } from '../lib/analytics'
 import { getBrowseCity } from '../lib/cities'
 import { fetchVerifiedListings } from '../lib/localListings'
 import { sortByMatchScore, interestMatchScore, commonInterests } from '../lib/matching'
+import InlineError from '../components/InlineError'
+import { reportSupabaseError } from '../lib/supabaseError'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -18,15 +20,52 @@ export default function Dashboard({ profile }) {
   const [localPreview, setLocalPreview] = useState([])
   const [browseCity, setBrowseCity] = useState(() => getBrowseCity(profile?.city))
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+
+  async function loadDashboard(city) {
+    setLoadError('')
+    setLoading(true)
+    const [matchesRes, groupsRes, eventsRes, localRes] = await Promise.all([
+      supabase.from('profiles')
+        .select('id,full_name,username,city,interests,avatar_url')
+        .neq('id', profile.id)
+        .eq('city', city || profile.city)
+        .eq('onboarding_complete', true)
+        .limit(30),
+      supabase.from('groups').select('*').eq('city', city || profile.city).limit(3),
+      supabase.from('events').select('*')
+        .eq('city', city || profile.city)
+        .gte('date', new Date().toISOString()).limit(3),
+      fetchVerifiedListings({ city, category: 'all', limit: 3 }).then(
+        data => ({ data, error: null }),
+        err => ({ data: [], error: err }),
+      ),
+    ])
+
+    const firstError = matchesRes.error || groupsRes.error || eventsRes.error || localRes.error
+    if (firstError) {
+      const msg = reportSupabaseError(firstError, 'Dashboard') || 'Failed to load dashboard'
+      setLoadError(msg)
+      setMatches([])
+      setGroups([])
+      setEvents([])
+      setLocalPreview([])
+      setLoading(false)
+      return
+    }
+
+    setMatches(sortByMatchScore(matchesRes.data || [], profile.interests).slice(0, 6))
+    setGroups(groupsRes.data || [])
+    setEvents(eventsRes.data || [])
+    setLocalPreview(localRes.data || [])
+    setLoading(false)
+  }
 
   useEffect(() => {
     if (profile) {
       const city = getBrowseCity(profile.city)
       setBrowseCity(city)
-      fetchMatches(city)
-      fetchGroups(city)
-      fetchEvents(city)
-      fetchLocal(city)
+      loadDashboard(city)
     }
   }, [profile])
 
@@ -34,47 +73,11 @@ export default function Dashboard({ profile }) {
     function onCityChange(e) {
       const city = e.detail || getBrowseCity(profile?.city)
       setBrowseCity(city)
-      fetchMatches(city)
-      fetchGroups(city)
-      fetchEvents(city)
-      fetchLocal(city)
+      loadDashboard(city)
     }
     window.addEventListener('browse-city-changed', onCityChange)
     return () => window.removeEventListener('browse-city-changed', onCityChange)
   }, [profile])
-
-  async function fetchLocal(city) {
-    try {
-      const data = await fetchVerifiedListings({ city, category: 'all', limit: 3 })
-      setLocalPreview(data)
-    } catch {
-      setLocalPreview([])
-    }
-  }
-
-  async function fetchMatches(city) {
-    const { data } = await supabase.from('profiles')
-      .select('id,full_name,username,city,interests,avatar_url')
-      .neq('id', profile.id)
-      .eq('city', city || profile.city)
-      .eq('onboarding_complete', true)
-      .limit(30)
-    setMatches(sortByMatchScore(data || [], profile.interests).slice(0, 6))
-  }
-
-  async function fetchGroups(city) {
-    const { data } = await supabase.from('groups').select('*')
-      .eq('city', city || profile.city).limit(3)
-    setGroups(data || [])
-  }
-
-  async function fetchEvents(city) {
-    const { data } = await supabase.from('events').select('*')
-      .eq('city', city || profile.city)
-      .gte('date', new Date().toISOString()).limit(3)
-    setEvents(data || [])
-    setLoading(false)
-  }
 
   function score(other) {
     return interestMatchScore(profile?.interests, other?.interests)
@@ -109,6 +112,8 @@ export default function Dashboard({ profile }) {
             ))}
           </div>
         </div>
+
+        <InlineError message={loadError} onRetry={() => loadDashboard(browseCity)} />
 
         {/* HUB — Local + People only (Events/Moments in bottom nav) */}
         <div style={{

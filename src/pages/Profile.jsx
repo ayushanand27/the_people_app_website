@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar'
 import { MessageCircle, Settings, UserPlus, UserCheck } from 'lucide-react'
 import { isFollowing, followUser, unfollowUser } from '../lib/social'
 import { track } from '../lib/analytics'
+import InlineError from '../components/InlineError'
+import { reportSupabaseError } from '../lib/supabaseError'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 
@@ -14,11 +16,20 @@ export default function Profile({ profile }) {
   const isOwn        = id === profile?.id
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [following, setFollowing] = useState(false)
   const [followBusy, setFollowBusy] = useState(false)
 
   const fetchUser = useCallback(async () => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', id).single()
+    setLoading(true)
+    setLoadError('')
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single()
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Profile') || 'Failed to load profile')
+      setUser(null)
+      setLoading(false)
+      return
+    }
     setUser(data)
     setLoading(false)
     if (profile?.id && id && id !== profile.id) {
@@ -57,8 +68,11 @@ export default function Profile({ profile }) {
   )
 
   if (!user) return (
-    <div style={{ minHeight: '100vh', background: '#FFF0F5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontWeight: 700, color: '#aaa' }}>User not found</div>
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
+      <Navbar active="profile" profile={profile} />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
+        <InlineError message={loadError || 'User not found'} onRetry={fetchUser} />
+      </div>
     </div>
   )
 

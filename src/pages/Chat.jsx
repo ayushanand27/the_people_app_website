@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { Send, ArrowLeft } from 'lucide-react'
+import InlineError from '../components/InlineError'
+import { reportSupabaseError } from '../lib/supabaseError'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -17,39 +19,66 @@ export default function Chat({ profile }) {
   const [receiver,      setReceiver]      = useState(null)
   const [newMsg,        setNewMsg]        = useState('')
   const [loading,       setLoading]       = useState(true)
+  const [loadError,     setLoadError]     = useState('')
 
   useEffect(() => { if (profile) fetchConversations() }, [profile])
-  useEffect(() => { if (receiverId && profile) { fetchReceiver(); fetchMessages(); subscribeMessages() } }, [receiverId, profile])
+  useEffect(() => {
+    if (!receiverId || !profile) return
+    setLoadError('')
+    fetchReceiver()
+    fetchMessages()
+    return subscribeMessages()
+  }, [receiverId, profile])
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   async function fetchConversations() {
-    const { data } = await supabase.from('messages')
+    setLoadError('')
+    setLoading(true)
+    const { data, error } = await supabase.from('messages')
       .select('sender_id, receiver_id')
       .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Chat conversations') || 'Failed to load conversations')
+      setLoading(false)
+      return
+    }
     if (!data) { setLoading(false); return }
     const ids = [...new Set(data.map(m => m.sender_id === profile.id ? m.receiver_id : m.sender_id))]
     if (ids.length === 0) { setLoading(false); return }
-    const { data: profiles } = await supabase.from('profiles')
+    const { data: profiles, error: profileError } = await supabase.from('profiles')
       .select('id,full_name,username').in('id', ids)
+    if (profileError) {
+      setLoadError(reportSupabaseError(profileError, 'Chat profiles') || 'Failed to load conversations')
+      setLoading(false)
+      return
+    }
     setConversations(profiles || [])
     setLoading(false)
   }
 
   async function fetchReceiver() {
-    const { data } = await supabase.from('profiles')
+    const { data, error } = await supabase.from('profiles')
       .select('id,full_name,username,city').eq('id', receiverId).single()
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Chat receiver') || 'Failed to load chat')
+      return
+    }
     setReceiver(data)
   }
 
   async function fetchMessages() {
-    const { data } = await supabase.from('messages').select('*')
+    const { data, error } = await supabase.from('messages').select('*')
       .or(`and(sender_id.eq.${profile.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${profile.id})`)
       .order('created_at', { ascending: true })
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Chat messages') || 'Failed to load messages')
+      return
+    }
     setMessages(data || [])
   }
 
   function subscribeMessages() {
-    const ch = supabase.channel('msgs')
+    const ch = supabase.channel(`msgs-${receiverId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
         const m = payload.new
         if ((m.sender_id === profile.id && m.receiver_id === receiverId) ||
@@ -75,6 +104,8 @@ export default function Chat({ profile }) {
       <Navbar active="chat" profile={profile} />
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
         <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 20 }}>Messages 💬</div>
+
+        <InlineError message={loadError} onRetry={fetchConversations} />
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: 60, color: '#aaa', fontWeight: 700 }}>Loading...</div>
@@ -159,7 +190,11 @@ export default function Chat({ profile }) {
 
       {/* MESSAGES */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: 100, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {messages.length === 0 && (
+        <InlineError
+          message={loadError}
+          onRetry={() => { setLoadError(''); fetchReceiver(); fetchMessages() }}
+        />
+        {messages.length === 0 && !loadError && (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>👋</div>
             <div style={{ color: '#888', fontWeight: 600 }}>Say hello to {receiver?.full_name}!</div>
