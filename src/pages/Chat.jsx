@@ -8,11 +8,14 @@ import { reportSupabaseError } from '../lib/supabaseError'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
+const MESSAGE_PAGE = 50
 
 export default function Chat({ profile }) {
   const navigate           = useNavigate()
   const { id: receiverId } = useParams()
   const bottomRef          = useRef(null)
+  const messagesRef        = useRef(null)
+  const oldestCursorRef    = useRef(null)
 
   const [conversations, setConversations] = useState([])
   const [messages,      setMessages]      = useState([])
@@ -20,16 +23,20 @@ export default function Chat({ profile }) {
   const [newMsg,        setNewMsg]        = useState('')
   const [loading,       setLoading]       = useState(true)
   const [loadError,     setLoadError]     = useState('')
+  const [hasOlder,      setHasOlder]      = useState(false)
+  const [loadingOlder,  setLoadingOlder]  = useState(false)
 
   useEffect(() => { if (profile) fetchConversations() }, [profile])
   useEffect(() => {
     if (!receiverId || !profile) return
     setLoadError('')
+    setHasOlder(false)
+    oldestCursorRef.current = null
     fetchReceiver()
     fetchMessages()
     return subscribeMessages()
   }, [receiverId, profile])
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages.length, receiverId])
 
   async function fetchConversations() {
     setLoadError('')
@@ -69,12 +76,54 @@ export default function Chat({ profile }) {
   async function fetchMessages() {
     const { data, error } = await supabase.from('messages').select('*')
       .or(`and(sender_id.eq.${profile.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${profile.id})`)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
+      .limit(MESSAGE_PAGE + 1)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Chat messages') || 'Failed to load messages')
       return
     }
-    setMessages(data || [])
+    const batch = data || []
+    setHasOlder(batch.length > MESSAGE_PAGE)
+    const slice = batch.slice(0, MESSAGE_PAGE).reverse()
+    setMessages(slice)
+    oldestCursorRef.current = slice[0]?.created_at ?? null
+  }
+
+  async function loadOlderMessages() {
+    if (!oldestCursorRef.current || loadingOlder || !hasOlder) return
+    setLoadingOlder(true)
+    const container = messagesRef.current
+    const prevHeight = container?.scrollHeight ?? 0
+
+    const { data, error } = await supabase.from('messages').select('*')
+      .or(`and(sender_id.eq.${profile.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${profile.id})`)
+      .lt('created_at', oldestCursorRef.current)
+      .order('created_at', { ascending: false })
+      .limit(MESSAGE_PAGE + 1)
+
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Chat older messages') || 'Failed to load older messages')
+      setLoadingOlder(false)
+      return
+    }
+
+    const batch = data || []
+    setHasOlder(batch.length > MESSAGE_PAGE)
+    const slice = batch.slice(0, MESSAGE_PAGE).reverse()
+    if (slice.length) {
+      oldestCursorRef.current = slice[0].created_at
+      setMessages(prev => [...slice, ...prev])
+      requestAnimationFrame(() => {
+        if (container) container.scrollTop = container.scrollHeight - prevHeight
+      })
+    } else {
+      setHasOlder(false)
+    }
+    setLoadingOlder(false)
+  }
+
+  function handleMessagesScroll(e) {
+    if (e.currentTarget.scrollTop < 80) loadOlderMessages()
   }
 
   function subscribeMessages() {
@@ -189,11 +238,20 @@ export default function Chat({ profile }) {
       </div>
 
       {/* MESSAGES */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: 100, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div
+        ref={messagesRef}
+        onScroll={handleMessagesScroll}
+        style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: 100, display: 'flex', flexDirection: 'column', gap: 10 }}
+      >
         <InlineError
           message={loadError}
           onRetry={() => { setLoadError(''); fetchReceiver(); fetchMessages() }}
         />
+        {hasOlder && (
+          <div style={{ textAlign: 'center', color: '#888', fontSize: 12, fontWeight: 700 }}>
+            {loadingOlder ? 'Loading older messages...' : 'Scroll up for older messages'}
+          </div>
+        )}
         {messages.length === 0 && !loadError && (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>👋</div>

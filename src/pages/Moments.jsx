@@ -75,11 +75,32 @@ export default function Moments({ profile }) {
       setLoadError('')
     }
 
+    if (feedTab === 'following' && !followingIds.length) {
+      setVideos([])
+      setHasMore(false)
+      setLoading(false)
+      setLoadingMore(false)
+      return
+    }
+    if (feedTab === 'saved' && !bookmarked.length) {
+      setVideos([])
+      setHasMore(false)
+      setLoading(false)
+      setLoadingMore(false)
+      return
+    }
+
     let query = supabase
       .from('videos')
       .select('*, profiles(full_name, username, avatar_url)')
       .order('created_at', { ascending: false })
       .limit(PAGE_SIZE)
+
+    if (feedTab === 'following') {
+      query = query.in('user_id', followingIds)
+    } else if (feedTab === 'saved') {
+      query = query.in('id', bookmarked)
+    }
 
     if (append && cursorRef.current) {
       query = query.lt('created_at', cursorRef.current)
@@ -96,22 +117,16 @@ export default function Moments({ profile }) {
 
     let batch = data || []
 
-    // Filter blocked users
     if (blockedIds.length) {
       batch = batch.filter(v => !blockedIds.includes(v.user_id))
     }
 
-    // Personalized ranking for "For You": followed creators first, then rest
     if (feedTab === 'foryou' && followingIds.length) {
       batch.sort((a, b) => {
         const aF = followingIds.includes(a.user_id) ? 1 : 0
         const bF = followingIds.includes(b.user_id) ? 1 : 0
         return bF - aF
       })
-    } else if (feedTab === 'following') {
-      batch = batch.filter(v => followingIds.includes(v.user_id))
-    } else if (feedTab === 'saved') {
-      batch = batch.filter(v => bookmarked.includes(v.id))
     }
 
     if (batch.length > 0) {

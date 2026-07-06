@@ -8,15 +8,17 @@ import { interestMatchScore, commonInterests, sortByMatchScore } from '../lib/ma
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 
-const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
-const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
-
 const ALL_INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
   'Travel', 'Books/Reading', 'Gaming', 'Photography',
   'Startups/Entrepreneurship', 'Indie Music', 'Fitness', 'Food',
   'Chess', 'Philosophy', 'Anime', 'Podcasts'
 ]
+
+const PAGE_SIZE = 30
+
+const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
+const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
 
 export default function Discover({ profile }) {
   const navigate = useNavigate()
@@ -28,6 +30,9 @@ export default function Discover({ profile }) {
   const [showFilters,    setShowFilters]    = useState(false)
   const [browseCity,     setBrowseCityState] = useState(() => getBrowseCity(profile?.city))
   const [loadError,      setLoadError]       = useState('')
+  const [hasMore,        setHasMore]         = useState(true)
+  const [loadingMore,    setLoadingMore]     = useState(false)
+  const [page,           setPage]            = useState(0)
 
   useEffect(() => {
     function onCityChange(e) {
@@ -37,24 +42,44 @@ export default function Discover({ profile }) {
     return () => window.removeEventListener('browse-city-changed', onCityChange)
   }, [profile?.city])
 
-  useEffect(() => { if (profile) fetchPeople() }, [profile, filter, browseCity])
+  useEffect(() => { if (profile) fetchPeople(false) }, [profile, filter, browseCity])
 
-  async function fetchPeople() {
-    setLoading(true)
-    setLoadError('')
+  async function fetchPeople(append = false) {
+    if (append) setLoadingMore(true)
+    else {
+      setLoading(true)
+      setLoadError('')
+      setPage(0)
+    }
+
+    const nextPage = append ? page + 1 : 0
+    const from = nextPage * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+
     let query = supabase.from('profiles')
       .select('id,full_name,username,city,interests,avatar_url,bio')
       .neq('id', profile.id)
       .eq('onboarding_complete', true)
     if (filter === 'city') query = query.eq('city', browseCity)
-    const { data, error } = await query.limit(100)
+    const { data, error } = await query.range(from, to)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Discover') || 'Failed to load people')
-      setPeople([])
-    } else {
-      setPeople(sortByMatchScore(data || [], profile.interests))
+      if (!append) setPeople([])
+      setLoading(false)
+      setLoadingMore(false)
+      return
     }
+
+    const batch = data || []
+    setHasMore(batch.length === PAGE_SIZE)
+    setPage(nextPage)
+    setPeople(prev => {
+      const merged = append ? [...prev, ...batch] : batch
+      const deduped = [...new Map(merged.map(p => [p.id, p])).values()]
+      return sortByMatchScore(deduped, profile.interests)
+    })
     setLoading(false)
+    setLoadingMore(false)
   }
 
   // CLIENT SIDE FILTERING
@@ -84,7 +109,7 @@ export default function Discover({ profile }) {
           <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Find people who get you</div>
         </div>
 
-        <InlineError message={loadError} onRetry={fetchPeople} />
+        <InlineError message={loadError} onRetry={() => fetchPeople(false)} />
 
         {/* SEARCH BAR */}
         <div style={{
@@ -293,6 +318,25 @@ export default function Discover({ profile }) {
                 </button>
               )
             })}
+          </div>
+        )}
+
+        {!loading && filtered.length > 0 && hasMore && !search && !selectedInterest && (
+          <div style={{ textAlign: 'center', marginTop: 20 }}>
+            <button
+              type="button"
+              onClick={() => fetchPeople(true)}
+              disabled={loadingMore}
+              style={{
+                background: loadingMore ? '#eee' : 'white',
+                border: '3px solid #1C1C3A', borderRadius: 50,
+                padding: '12px 28px', fontWeight: 800, fontSize: 14,
+                cursor: loadingMore ? 'wait' : 'pointer',
+                boxShadow: '4px 4px 0 #1C1C3A', fontFamily: 'inherit',
+              }}
+            >
+              {loadingMore ? 'Loading...' : 'Load more people'}
+            </button>
           </div>
         )}
       </div>
