@@ -440,7 +440,7 @@ export default function Moments({ profile }) {
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {['foryou', 'following', 'saved'].map(tab => (
             <button key={tab} onClick={() => setFeedTab(tab)} style={{
-              background: feedTab === tab ? '#FF85B3' : 'rgba(255,255,255,0.15)',
+              background: feedTab === tab ? '#FFB0D0' : 'rgba(255,255,255,0.15)',
               color: 'white', border: 'none', borderRadius: 50,
               padding: '5px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit'
             }}>
@@ -480,8 +480,8 @@ export default function Moments({ profile }) {
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             padding: '6px 12px', borderRadius: 14,
             background: tab.active ? 'rgba(255,133,179,0.3)' : 'transparent',
-            border: tab.active ? '1.5px solid #FF85B3' : '1.5px solid transparent',
-            color: tab.active ? '#FF85B3' : 'rgba(255,255,255,0.6)',
+            border: tab.active ? '1.5px solid #FFB0D0' : '1.5px solid transparent',
+            color: tab.active ? '#FFB0D0' : 'rgba(255,255,255,0.6)',
             fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
           }}>
             <span style={{ fontSize: 20 }}>{tab.emoji}</span>
@@ -624,7 +624,7 @@ export default function Moments({ profile }) {
                   {video.hashtags?.length > 0 && (
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                       {video.hashtags.map(tag => (
-                        <span key={tag} style={{ color: '#FF85B3', fontSize: 13, fontWeight: 700 }}>#{tag}</span>
+                        <span key={tag} style={{ color: '#FFB0D0', fontSize: 13, fontWeight: 700 }}>#{tag}</span>
                       ))}
                     </div>
                   )}
@@ -684,8 +684,8 @@ export default function Moments({ profile }) {
             {uploading ? (
               <div>
                 <div style={{ fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>Uploading... {progress}%</div>
-                <div style={{ background: '#eee', borderRadius: 50, height: 12, border: '2px solid #1C1C3A' }}>
-                  <div style={{ width: `${progress}%`, height: '100%', background: '#FF85B3', borderRadius: 50, transition: 'width 0.3s' }} />
+                <div style={{ background: '#eee', borderRadius: 50, height: 12, border: '2px solid #8A8AA8' }}>
+                  <div style={{ width: `${progress}%`, height: '100%', background: '#FFB0D0', borderRadius: 50, transition: 'width 0.3s' }} />
                 </div>
               </div>
             ) : (
@@ -781,13 +781,13 @@ const iconBtnStyle = {
 }
 
 const uploadBtnStyle = {
-  background: '#FF85B3', color: 'white', border: '2.5px solid white', borderRadius: 50,
+  background: '#FFB0D0', color: 'white', border: '2.5px solid white', borderRadius: 50,
   padding: '8px 18px', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
   display: 'flex', alignItems: 'center', gap: 6,
 }
 
 const avatarBtnStyle = {
-  width: 48, height: 48, borderRadius: 50, background: '#FF85B3', border: '2.5px solid white',
+  width: 48, height: 48, borderRadius: 50, background: '#FFB0D0', border: '2.5px solid white',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   color: 'white', fontWeight: 900, fontSize: 20, cursor: 'pointer', overflow: 'hidden',
 }
@@ -798,9 +798,9 @@ const actionBtnStyle = {
 }
 
 const inputStyle = {
-  width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
+  width: '100%', border: '3px solid #8A8AA8', borderRadius: 50,
   padding: '12px 16px', fontSize: 14, fontWeight: 600,
-  background: '#FFF0F5', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+  background: '#FFFCFD', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
 }
 
 const closeBtnStyle = {
@@ -810,10 +810,10 @@ const closeBtnStyle = {
 }
 
 const chooseBtnStyle = {
-  width: '100%', background: '#FF85B3', color: 'white',
-  border: '3px solid #1C1C3A', borderRadius: 50,
+  width: '100%', background: '#FFB0D0', color: 'white',
+  border: '3px solid #8A8AA8', borderRadius: 50,
   padding: '16px 20px', fontWeight: 900, fontSize: 16,
-  boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
+  boxShadow: '4px 4px 0 #8A8AA8', cursor: 'pointer',
   fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
 }
 

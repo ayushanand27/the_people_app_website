@@ -62,13 +62,13 @@ export default function Profile({ profile }) {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#FFF0F5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: '#FFFCFD', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontWeight: 700, color: '#aaa', fontSize: 18 }}>Loading profile...</div>
     </div>
   )
 
   if (!user) return (
-    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
       <Navbar active="profile" profile={profile} />
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
         <InlineError message={loadError || 'User not found'} onRetry={fetchUser} />
@@ -80,25 +80,25 @@ export default function Profile({ profile }) {
   const score = Math.round((c.length / Math.max(profile?.interests?.length || 1, 1)) * 100)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
       <Navbar active="profile" profile={profile} />
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
 
         {/* PROFILE HERO */}
         <div style={{
-          background: '#FFB3CC', border: '3px solid #1C1C3A',
+          background: '#FFB3CC', border: '3px solid #8A8AA8',
           borderRadius: 24, padding: 24,
-          boxShadow: '6px 6px 0 #1C1C3A', marginBottom: 16
+          boxShadow: '6px 6px 0 #8A8AA8', marginBottom: 16
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
 
             {/* AVATAR — shows photo if available */}
             <div style={{
               width: 88, height: 88, borderRadius: 22,
-              border: '3px solid #1C1C3A',
+              border: '3px solid #8A8AA8',
               background: '#FF6B9D', overflow: 'hidden',
-              boxShadow: '4px 4px 0 #1C1C3A',
+              boxShadow: '4px 4px 0 #8A8AA8',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0
             }}>
@@ -117,9 +117,9 @@ export default function Profile({ profile }) {
               <button onClick={() => navigate('/settings')} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '10px 18px', borderRadius: 14,
-                border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
+                border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 14,
                 background: 'white', cursor: 'pointer',
-                boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
+                boxShadow: '3px 3px 0 #8A8AA8', fontFamily: 'inherit'
               }}>
                 <Settings size={16} /> Edit Profile
               </button>
@@ -128,18 +128,18 @@ export default function Profile({ profile }) {
                 <button onClick={toggleFollow} disabled={followBusy} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '10px 18px', borderRadius: 14,
-                  border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
-                  background: following ? 'white' : '#4CAF82', color: following ? '#1C1C3A' : 'white',
-                  cursor: 'pointer', boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
+                  border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 14,
+                  background: following ? 'white' : '#4CAF82', color: following ? '#8A8AA8' : 'white',
+                  cursor: 'pointer', boxShadow: '3px 3px 0 #8A8AA8', fontFamily: 'inherit'
                 }}>
                   {following ? <><UserCheck size={16} /> Following</> : <><UserPlus size={16} /> Follow</>}
                 </button>
                 <button onClick={() => navigate(`/chat/${user.id}`)} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '10px 18px', borderRadius: 14,
-                  border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
-                  background: '#FF85B3', color: 'white', cursor: 'pointer',
-                  boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
+                  border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 14,
+                  background: '#FFB0D0', color: 'white', cursor: 'pointer',
+                  boxShadow: '3px 3px 0 #8A8AA8', fontFamily: 'inherit'
                 }}>
                   <MessageCircle size={16} /> Message
                 </button>
@@ -171,19 +171,19 @@ export default function Profile({ profile }) {
 
         {/* INTERESTS */}
         <div style={{
-          background: 'white', border: '3px solid #1C1C3A',
+          background: 'white', border: '3px solid #8A8AA8',
           borderRadius: 20, padding: 20,
-          boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
+          boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 16
         }}>
           <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 14 }}>Interests 🎯</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {user.interests?.map((x, i) => (
               <span key={x} style={{
                 background: BG[i % BG.length],
-                border: '3px solid #1C1C3A',
+                border: '3px solid #8A8AA8',
                 borderRadius: 50, padding: '8px 16px',
                 fontSize: 13, fontWeight: 700,
-                boxShadow: '2px 2px 0 #1C1C3A'
+                boxShadow: '2px 2px 0 #8A8AA8'
               }}>{x}</span>
             ))}
           </div>
@@ -194,7 +194,7 @@ export default function Profile({ profile }) {
           <div style={{
             background: '#B8F0B8', border: '3px solid #4CAF82',
             borderRadius: 20, padding: 20,
-            boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
+            boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 16
           }}>
             <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 14, color: '#1C6B3A' }}>
               You both love 💚 ({c.length} in common)
@@ -214,22 +214,22 @@ export default function Profile({ profile }) {
         {/* MATCH SCORE */}
         {!isOwn && (
           <div style={{
-            background: 'white', border: '3px solid #1C1C3A',
+            background: 'white', border: '3px solid #8A8AA8',
             borderRadius: 20, padding: 20,
-            boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
+            boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 16
           }}>
             <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 12 }}>Match Score 🎯</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{
                 flex: 1, height: 16, background: '#eee',
-                borderRadius: 50, border: '2px solid #1C1C3A', overflow: 'hidden'
+                borderRadius: 50, border: '2px solid #8A8AA8', overflow: 'hidden'
               }}>
                 <div style={{
                   width: `${score}%`, height: '100%',
-                  background: '#FF85B3', borderRadius: 50
+                  background: '#FFB0D0', borderRadius: 50
                 }} />
               </div>
-              <span style={{ fontWeight: 900, fontSize: 24, color: '#FF85B3' }}>{score}%</span>
+              <span style={{ fontWeight: 900, fontSize: 24, color: '#FFB0D0' }}>{score}%</span>
             </div>
           </div>
         )}

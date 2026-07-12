@@ -58,7 +58,7 @@ export default function Onboarding({ profile, setProfile }) {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#FFF0F5',
+      minHeight: '100vh', background: '#FFFCFD',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 16
     }}>
@@ -69,18 +69,18 @@ export default function Onboarding({ profile, setProfile }) {
           {[1,2,3].map(s => (
             <div key={s} style={{
               flex: 1, height: 12, borderRadius: 50,
-              border: '2.5px solid #1C1C3A',
-              background: step >= s ? '#FF85B3' : 'white',
-              boxShadow: step >= s ? '2px 2px 0 #1C1C3A' : 'none',
+              border: '2.5px solid #8A8AA8',
+              background: step >= s ? '#FFB0D0' : 'white',
+              boxShadow: step >= s ? '2px 2px 0 #8A8AA8' : 'none',
               transition: 'all 0.3s'
             }} />
           ))}
         </div>
 
         <div style={{
-          background: 'white', border: '3px solid #1C1C3A',
+          background: 'white', border: '3px solid #8A8AA8',
           borderRadius: 24, padding: 32,
-          boxShadow: '7px 7px 0 #1C1C3A'
+          boxShadow: '7px 7px 0 #8A8AA8'
         }}>
 
           {/* STEP 1 */}
@@ -95,9 +95,9 @@ export default function Onboarding({ profile, setProfile }) {
                   type="text" placeholder="Your full name"
                   value={fullName} onChange={e => setFullName(e.target.value)}
                   style={{
-                    width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
+                    width: '100%', border: '3px solid #8A8AA8', borderRadius: 50,
                     padding: '14px 20px', fontSize: 15, fontWeight: 600,
-                    background: '#FFF0F5', outline: 'none', fontFamily: 'inherit',
+                    background: '#FFFCFD', outline: 'none', fontFamily: 'inherit',
                     boxSizing: 'border-box'
                   }}
                 />
@@ -109,9 +109,9 @@ export default function Onboarding({ profile, setProfile }) {
                   type="text" placeholder="@yourname"
                   value={username} onChange={e => setUsername(e.target.value)}
                   style={{
-                    width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
+                    width: '100%', border: '3px solid #8A8AA8', borderRadius: 50,
                     padding: '14px 20px', fontSize: 15, fontWeight: 600,
-                    background: '#FFF0F5', outline: 'none', fontFamily: 'inherit',
+                    background: '#FFFCFD', outline: 'none', fontFamily: 'inherit',
                     boxSizing: 'border-box'
                   }}
                 />
@@ -126,9 +126,9 @@ export default function Onboarding({ profile, setProfile }) {
                   value={bio} onChange={e => setBio(e.target.value)}
                   rows={3}
                   style={{
-                    width: '100%', border: '3px solid #1C1C3A', borderRadius: 20,
+                    width: '100%', border: '3px solid #8A8AA8', borderRadius: 20,
                     padding: '14px 20px', fontSize: 15, fontWeight: 600,
-                    background: '#FFF0F5', outline: 'none', fontFamily: 'inherit',
+                    background: '#FFFCFD', outline: 'none', fontFamily: 'inherit',
                     resize: 'none', boxSizing: 'border-box'
                   }}
                 />
@@ -139,10 +139,10 @@ export default function Onboarding({ profile, setProfile }) {
               <button
                 onClick={() => fullName && username ? (setError(''), setStep(2)) : setError('Fill in your name and username')}
                 style={{
-                  width: '100%', background: '#FF85B3', color: 'white',
-                  border: '3px solid #1C1C3A', borderRadius: 50,
+                  width: '100%', background: '#FFB0D0', color: 'white',
+                  border: '3px solid #8A8AA8', borderRadius: 50,
                   padding: '16px 20px', fontWeight: 900, fontSize: 17,
-                  boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+                  boxShadow: '5px 5px 0 #8A8AA8', cursor: 'pointer',
                   fontFamily: 'inherit'
                 }}
               >Next →</button>
@@ -166,19 +166,19 @@ export default function Onboarding({ profile, setProfile }) {
 
               <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
                 <button onClick={() => setStep(1)} style={{
-                  flex: 1, background: 'white', color: '#1C1C3A',
-                  border: '3px solid #1C1C3A', borderRadius: 50,
+                  flex: 1, background: 'white', color: '#5A5A78',
+                  border: '3px solid #8A8AA8', borderRadius: 50,
                   padding: '16px 20px', fontWeight: 900, fontSize: 17,
-                  boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
+                  boxShadow: '4px 4px 0 #8A8AA8', cursor: 'pointer',
                   fontFamily: 'inherit'
                 }}>← Back</button>
                 <button
                   onClick={() => isCityValid(city, customCity) ? (setError(''), setStep(3)) : setError(city === 'Other' ? 'Enter your city name' : 'Pick a city')}
                   style={{
-                    flex: 2, background: '#FF85B3', color: 'white',
-                    border: '3px solid #1C1C3A', borderRadius: 50,
+                    flex: 2, background: '#FFB0D0', color: 'white',
+                    border: '3px solid #8A8AA8', borderRadius: 50,
                     padding: '16px 20px', fontWeight: 900, fontSize: 17,
-                    boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+                    boxShadow: '5px 5px 0 #8A8AA8', cursor: 'pointer',
                     fontFamily: 'inherit'
                   }}
                 >Next →</button>
@@ -193,7 +193,7 @@ export default function Onboarding({ profile, setProfile }) {
               <div style={{ color: '#888', fontSize: 15, marginBottom: 4 }}>Pick 3 to 5 things you love</div>
               <div style={{
                 display: 'inline-block',
-                background: '#FFB3CC', border: '2px solid #1C1C3A',
+                background: '#FFB3CC', border: '2px solid #8A8AA8',
                 borderRadius: 50, padding: '4px 14px',
                 fontWeight: 700, fontSize: 13, marginBottom: 20
               }}>{interests.length}/5 selected</div>
@@ -202,10 +202,10 @@ export default function Onboarding({ profile, setProfile }) {
                 {INTERESTS.map((x, i) => (
                   <button key={x} onClick={() => toggleInterest(x)} style={{
                     padding: '10px 18px', borderRadius: 50,
-                    border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
-                    background: interests.includes(x) ? '#FF85B3' : BG[i % BG.length],
-                    color: interests.includes(x) ? 'white' : '#1C1C3A',
-                    boxShadow: interests.includes(x) ? '4px 4px 0 #1C1C3A' : '2px 2px 0 #1C1C3A',
+                    border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 13,
+                    background: interests.includes(x) ? '#FFB0D0' : BG[i % BG.length],
+                    color: interests.includes(x) ? 'white' : '#8A8AA8',
+                    boxShadow: interests.includes(x) ? '4px 4px 0 #8A8AA8' : '2px 2px 0 #8A8AA8',
                     cursor: 'pointer', fontFamily: 'inherit',
                     transform: interests.includes(x) ? 'translate(-1px,-1px)' : 'none',
                     transition: 'all 0.15s'
@@ -217,19 +217,19 @@ export default function Onboarding({ profile, setProfile }) {
 
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setStep(2)} style={{
-                  flex: 1, background: 'white', color: '#1C1C3A',
-                  border: '3px solid #1C1C3A', borderRadius: 50,
+                  flex: 1, background: 'white', color: '#5A5A78',
+                  border: '3px solid #8A8AA8', borderRadius: 50,
                   padding: '16px 20px', fontWeight: 900, fontSize: 17,
-                  boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
+                  boxShadow: '4px 4px 0 #8A8AA8', cursor: 'pointer',
                   fontFamily: 'inherit'
                 }}>← Back</button>
                 <button
                   onClick={handleFinish} disabled={loading}
                   style={{
                     flex: 2, background: '#4CAF82', color: 'white',
-                    border: '3px solid #1C1C3A', borderRadius: 50,
+                    border: '3px solid #8A8AA8', borderRadius: 50,
                     padding: '16px 20px', fontWeight: 900, fontSize: 17,
-                    boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+                    boxShadow: '5px 5px 0 #8A8AA8', cursor: 'pointer',
                     fontFamily: 'inherit', opacity: loading ? 0.6 : 1
                   }}
                 >{loading ? 'Saving...' : "Let's go 🚀"}</button>

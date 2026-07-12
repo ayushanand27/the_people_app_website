@@ -128,9 +128,9 @@ export default function Settings({ profile, setProfile }) {
 
   const section = (title, children) => (
     <div style={{
-      background: 'white', border: '3px solid #1C1C3A',
+      background: 'white', border: '3px solid #8A8AA8',
       borderRadius: 20, padding: 20,
-      boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
+      boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 16
     }}>
       <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 14 }}>{title}</div>
       {children}
@@ -138,7 +138,7 @@ export default function Settings({ profile, setProfile }) {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
       <Navbar active="settings" profile={profile} />
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
 
@@ -153,10 +153,10 @@ export default function Settings({ profile, setProfile }) {
             <div style={{ position: 'relative' }}>
               <div style={{
                 width: 90, height: 90, borderRadius: 24,
-                border: '3px solid #1C1C3A',
-                background: avatarUrl ? 'transparent' : '#FF85B3',
+                border: '3px solid #8A8AA8',
+                background: avatarUrl ? 'transparent' : '#FFB0D0',
                 overflow: 'hidden',
-                boxShadow: '4px 4px 0 #1C1C3A',
+                boxShadow: '4px 4px 0 #8A8AA8',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
                 {avatarUrl ? (
@@ -173,9 +173,9 @@ export default function Settings({ profile, setProfile }) {
                 style={{
                   position: 'absolute', bottom: -6, right: -6,
                   width: 32, height: 32, borderRadius: 10,
-                  background: '#FF85B3', border: '2.5px solid #1C1C3A',
+                  background: '#FFB0D0', border: '2.5px solid #8A8AA8',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', boxShadow: '2px 2px 0 #1C1C3A'
+                  cursor: 'pointer', boxShadow: '2px 2px 0 #8A8AA8'
                 }}
               >
                 <Camera size={14} color="white" />
@@ -194,10 +194,10 @@ export default function Settings({ profile, setProfile }) {
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
                 style={{
-                  background: '#FFB3CC', border: '3px solid #1C1C3A',
+                  background: '#FFB3CC', border: '3px solid #8A8AA8',
                   borderRadius: 50, padding: '10px 20px',
                   fontWeight: 700, fontSize: 14, cursor: 'pointer',
-                  boxShadow: '3px 3px 0 #1C1C3A',
+                  boxShadow: '3px 3px 0 #8A8AA8',
                   fontFamily: 'inherit',
                   opacity: uploading ? 0.6 : 1
                 }}
@@ -218,9 +218,9 @@ export default function Settings({ profile, setProfile }) {
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Full Name</div>
               <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
                 style={{
-                  width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
+                  width: '100%', border: '3px solid #8A8AA8', borderRadius: 50,
                   padding: '12px 16px', fontSize: 15, fontWeight: 600,
-                  background: '#FFF0F5', outline: 'none',
+                  background: '#FFFCFD', outline: 'none',
                   fontFamily: 'inherit', boxSizing: 'border-box'
                 }} />
             </div>
@@ -228,9 +228,9 @@ export default function Settings({ profile, setProfile }) {
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Bio</div>
               <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3}
                 style={{
-                  width: '100%', border: '3px solid #1C1C3A', borderRadius: 20,
+                  width: '100%', border: '3px solid #8A8AA8', borderRadius: 20,
                   padding: '12px 16px', fontSize: 15, fontWeight: 600,
-                  background: '#FFF0F5', outline: 'none',
+                  background: '#FFFCFD', outline: 'none',
                   fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box'
                 }} />
             </div>
@@ -254,10 +254,10 @@ export default function Settings({ profile, setProfile }) {
             {INTERESTS.map(x => (
               <button key={x} onClick={() => toggleInterest(x)} style={{
                 padding: '8px 16px', borderRadius: 50,
-                border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
-                background: interests.includes(x) ? '#FF85B3' : 'white',
-                color: interests.includes(x) ? 'white' : '#1C1C3A',
-                boxShadow: '2px 2px 0 #1C1C3A', cursor: 'pointer',
+                border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 13,
+                background: interests.includes(x) ? '#FFB0D0' : 'white',
+                color: interests.includes(x) ? 'white' : '#8A8AA8',
+                boxShadow: '2px 2px 0 #8A8AA8', cursor: 'pointer',
                 fontFamily: 'inherit'
               }}>{x}</button>
             ))}
@@ -266,9 +266,9 @@ export default function Settings({ profile, setProfile }) {
 
         {/* LIST YOUR BUSINESS */}
         <div style={{
-          background: '#B8F0B8', border: '3px solid #1C1C3A',
+          background: '#B8F0B8', border: '3px solid #8A8AA8',
           borderRadius: 20, padding: 20,
-          boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16,
+          boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 16,
         }}>
           <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>🏪 List your business</div>
           <div style={{ color: '#555', fontSize: 14, marginBottom: 14, lineHeight: 1.5 }}>
@@ -282,9 +282,9 @@ export default function Settings({ profile, setProfile }) {
               style={{
                 display: 'block', textAlign: 'center', textDecoration: 'none',
                 background: '#25D366', color: 'white',
-                border: '3px solid #1C1C3A', borderRadius: 50,
+                border: '3px solid #8A8AA8', borderRadius: 50,
                 padding: '14px 20px', fontWeight: 900, fontSize: 15,
-                boxShadow: '4px 4px 0 #1C1C3A',
+                boxShadow: '4px 4px 0 #8A8AA8',
               }}
             >
               WhatsApp us →
@@ -295,8 +295,8 @@ export default function Settings({ profile, setProfile }) {
               rel="noopener noreferrer"
               style={{
                 display: 'block', textAlign: 'center', textDecoration: 'none',
-                background: 'white', color: '#1C1C3A',
-                border: '3px solid #1C1C3A', borderRadius: 50,
+                background: 'white', color: '#5A5A78',
+                border: '3px solid #8A8AA8', borderRadius: 50,
                 padding: '12px 20px', fontWeight: 800, fontSize: 14,
               }}
             >
@@ -306,8 +306,8 @@ export default function Settings({ profile, setProfile }) {
               href={`mailto:${ADMIN_EMAIL}?subject=List my business on The People App`}
               style={{
                 display: 'block', textAlign: 'center', textDecoration: 'none',
-                background: 'white', color: '#FF85B3',
-                border: '3px solid #1C1C3A', borderRadius: 50,
+                background: 'white', color: '#FFB0D0',
+                border: '3px solid #8A8AA8', borderRadius: 50,
                 padding: '12px 20px', fontWeight: 800, fontSize: 14,
               }}
             >
@@ -318,16 +318,16 @@ export default function Settings({ profile, setProfile }) {
 
         {/* PREMIUM */}
         <div style={{
-          background: '#FFD699', border: '3px solid #1C1C3A',
+          background: '#FFD699', border: '3px solid #8A8AA8',
           borderRadius: 20, padding: 20,
-          boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
+          boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 16
         }}>
           <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>⭐ Premium</div>
           <div style={{ color: '#555', fontSize: 14, marginBottom: 14 }}>
             Unlock unlimited matches and exclusive features.
           </div>
           <div style={{
-            background: 'white', border: '3px solid #1C1C3A',
+            background: 'white', border: '3px solid #8A8AA8',
             borderRadius: 16, padding: 16, marginBottom: 14
           }}>
             <div style={{ fontWeight: 900, fontSize: 22 }}>₹199 / month</div>
@@ -344,9 +344,9 @@ export default function Settings({ profile, setProfile }) {
           ) : (
             <button style={{
               width: '100%', background: '#FF9F1C', color: 'white',
-              border: '3px solid #1C1C3A', borderRadius: 50,
+              border: '3px solid #8A8AA8', borderRadius: 50,
               padding: '14px 20px', fontWeight: 900, fontSize: 16,
-              boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
+              boxShadow: '4px 4px 0 #8A8AA8', cursor: 'pointer',
               fontFamily: 'inherit'
             }}>Upgrade to Premium ⭐</button>
           )}
@@ -363,10 +363,10 @@ export default function Settings({ profile, setProfile }) {
         <button onClick={handleSave} disabled={loading} style={{
           width: '100%', display: 'flex', alignItems: 'center',
           justifyContent: 'center', gap: 8,
-          background: saved ? '#4CAF82' : '#FF85B3', color: 'white',
-          border: '3px solid #1C1C3A', borderRadius: 50,
+          background: saved ? '#4CAF82' : '#FFB0D0', color: 'white',
+          border: '3px solid #8A8AA8', borderRadius: 50,
           padding: '16px 20px', fontWeight: 900, fontSize: 17,
-          boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+          boxShadow: '5px 5px 0 #8A8AA8', cursor: 'pointer',
           marginBottom: 12, opacity: loading ? 0.6 : 1,
           fontFamily: 'inherit', transition: 'all 0.2s'
         }}>
@@ -393,7 +393,7 @@ export default function Settings({ profile, setProfile }) {
               placeholder='Type DELETE to confirm'
               style={{
                 width: '100%', padding: '12px 14px', marginBottom: 12,
-                border: '3px solid #1C1C3A', borderRadius: 14,
+                border: '3px solid #8A8AA8', borderRadius: 14,
                 fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
               }}
             />
@@ -421,9 +421,9 @@ export default function Settings({ profile, setProfile }) {
           width: '100%', display: 'flex', alignItems: 'center',
           justifyContent: 'center', gap: 8,
           background: 'white', color: '#CC0000',
-          border: '3px solid #1C1C3A', borderRadius: 50,
+          border: '3px solid #8A8AA8', borderRadius: 50,
           padding: '16px 20px', fontWeight: 900, fontSize: 17,
-          boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
+          boxShadow: '5px 5px 0 #8A8AA8', cursor: 'pointer',
           marginBottom: 32, fontFamily: 'inherit'
         }}>
           <LogOut size={20} /> Log Out
@@ -434,10 +434,10 @@ export default function Settings({ profile, setProfile }) {
           <button onClick={() => navigate('/admin')} style={{
             width: '100%', display: 'flex', alignItems: 'center',
             justifyContent: 'center', gap: 8,
-            background: '#1C1C3A', color: 'white',
-            border: '3px solid #1C1C3A', borderRadius: 50,
+            background: '#8A8AA8', color: 'white',
+            border: '3px solid #8A8AA8', borderRadius: 50,
             padding: '16px 20px', fontWeight: 900, fontSize: 17,
-            boxShadow: '5px 5px 0 #FF85B3', cursor: 'pointer',
+            boxShadow: '5px 5px 0 #FFB0D0', cursor: 'pointer',
             marginBottom: 12, fontFamily: 'inherit'
           }}>
             ⚙️ Admin Panel

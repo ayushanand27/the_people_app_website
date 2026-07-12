@@ -15,21 +15,21 @@ import { LAUNCH_CITIES } from '../../lib/cities'
 
 function cardStyle(bg = 'white') {
   return {
-    background: bg, border: '3px solid #1C1C3A', borderRadius: 16,
-    padding: '14px 18px', boxShadow: '3px 3px 0 #1C1C3A',
+    background: bg, border: '3px solid #8A8AA8', borderRadius: 16,
+    padding: '14px 18px', boxShadow: '3px 3px 0 #8A8AA8',
   }
 }
 
 function btn(bg, color = 'white') {
   return {
-    background: bg, color, border: '2.5px solid #1C1C3A', borderRadius: 10,
+    background: bg, color, border: '2.5px solid #8A8AA8', borderRadius: 10,
     padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer',
     fontFamily: 'inherit',
   }
 }
 
 const inputStyle = {
-  width: '100%', border: '3px solid #1C1C3A', borderRadius: 12,
+  width: '100%', border: '3px solid #8A8AA8', borderRadius: 12,
   padding: '10px 14px', fontSize: 14, fontWeight: 600,
   fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10,
 }
@@ -205,7 +205,7 @@ export default function AdminListingsTab({ profile, onSuccess, onError }) {
           {images.length > 0 && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '10px 0' }}>
               {images.map((url, i) => (
-                <img key={i} src={url} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 10, border: '2px solid #1C1C3A' }} />
+                <img key={i} src={url} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 10, border: '2px solid #8A8AA8' }} />
               ))}
             </div>
           )}

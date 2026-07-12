@@ -5,7 +5,7 @@ import { Heart, MessageCircle, UserPlus, Bell } from 'lucide-react'
 import { getNotifications, markNotificationsRead } from '../lib/social'
 
 const ICONS = { like: Heart, comment: MessageCircle, follow: UserPlus, message: MessageCircle }
-const COLORS = { like: '#FF6B6B', comment: '#29ABE2', follow: '#4CAF82', message: '#FF85B3' }
+const COLORS = { like: '#FF6B6B', comment: '#29ABE2', follow: '#4CAF82', message: '#FFB0D0' }
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -49,7 +49,7 @@ export default function Notifications({ profile }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
       <Navbar active="notifications" profile={profile} />
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
@@ -59,8 +59,8 @@ export default function Notifications({ profile }) {
           <div style={{ textAlign: 'center', padding: 60, color: '#aaa', fontWeight: 700 }}>Loading...</div>
         ) : items.length === 0 ? (
           <div style={{
-            background: 'white', border: '3px solid #1C1C3A', borderRadius: 20,
-            padding: '48px 20px', textAlign: 'center', boxShadow: '5px 5px 0 #1C1C3A'
+            background: 'white', border: '3px solid #8A8AA8', borderRadius: 20,
+            padding: '48px 20px', textAlign: 'center', boxShadow: '5px 5px 0 #8A8AA8'
           }}>
             <Bell size={48} color="#ddd" style={{ margin: '0 auto 16px' }} />
             <div style={{ fontWeight: 900, fontSize: 18 }}>No notifications yet</div>
@@ -70,18 +70,18 @@ export default function Notifications({ profile }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {items.map(n => {
               const Icon = ICONS[n.type] || Bell
-              const color = COLORS[n.type] || '#FF85B3'
+              const color = COLORS[n.type] || '#FFB0D0'
               return (
                 <button key={n.id} onClick={() => handleClick(n)} style={{
                   display: 'flex', alignItems: 'center', gap: 14,
-                  background: n.read ? 'white' : '#FFF0F5',
-                  border: '3px solid #1C1C3A', borderRadius: 16,
+                  background: n.read ? 'white' : '#FFFCFD',
+                  border: '3px solid #8A8AA8', borderRadius: 16,
                   padding: '14px 16px', textAlign: 'left', cursor: 'pointer',
-                  boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit', width: '100%'
+                  boxShadow: '3px 3px 0 #8A8AA8', fontFamily: 'inherit', width: '100%'
                 }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 12, background: color,
-                    border: '2.5px solid #1C1C3A', display: 'flex',
+                    border: '2.5px solid #8A8AA8', display: 'flex',
                     alignItems: 'center', justifyContent: 'center', flexShrink: 0
                   }}>
                     <Icon size={20} color="white" />
@@ -91,7 +91,7 @@ export default function Notifications({ profile }) {
                     <div style={{ color: '#aaa', fontSize: 12, marginTop: 2 }}>{timeAgo(n.created_at)}</div>
                   </div>
                   {!n.read && (
-                    <div style={{ width: 10, height: 10, borderRadius: 50, background: '#FF85B3', flexShrink: 0 }} />
+                    <div style={{ width: 10, height: 10, borderRadius: 50, background: '#FFB0D0', flexShrink: 0 }} />
                   )}
                 </button>
               )

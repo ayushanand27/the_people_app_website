@@ -20,14 +20,14 @@ const STATUS_COLORS = {
 
 function cardStyle(bg = 'white') {
   return {
-    background: bg, border: '3px solid #1C1C3A', borderRadius: 16,
-    padding: '14px 18px', boxShadow: '3px 3px 0 #1C1C3A',
+    background: bg, border: '3px solid #8A8AA8', borderRadius: 16,
+    padding: '14px 18px', boxShadow: '3px 3px 0 #8A8AA8',
   }
 }
 
 function actionBtn(bg, color = 'white') {
   return {
-    background: bg, color, border: '2.5px solid #1C1C3A', borderRadius: 10,
+    background: bg, color, border: '2.5px solid #8A8AA8', borderRadius: 10,
     padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer',
     fontFamily: 'inherit',
   }
@@ -137,7 +137,7 @@ export default function AdminReportsTab({ onSuccess, onError }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pendingVideos.map(v => (
-              <div key={v.id} style={cardStyle('#FFF0F5')}>
+              <div key={v.id} style={cardStyle('#FFFCFD')}>
                 <div style={{ fontWeight: 900, fontSize: 15, marginBottom: 4 }}>{v.title || 'Untitled'}</div>
                 <div style={{ color: '#555', fontSize: 13, marginBottom: 4 }}>
                   By {v.profiles?.full_name || 'Unknown'} (@{v.profiles?.username || '?'})
@@ -187,10 +187,10 @@ export default function AdminReportsTab({ onSuccess, onError }) {
         {STATUS_FILTERS.map(f => (
           <button key={f} onClick={() => setFilter(f)} style={{
             padding: '8px 16px', borderRadius: 50,
-            border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
-            background: filter === f ? '#FF85B3' : 'white',
-            color: filter === f ? 'white' : '#1C1C3A',
-            boxShadow: '2px 2px 0 #1C1C3A', cursor: 'pointer', fontFamily: 'inherit',
+            border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 13,
+            background: filter === f ? '#FFB0D0' : 'white',
+            color: filter === f ? 'white' : '#8A8AA8',
+            boxShadow: '2px 2px 0 #8A8AA8', cursor: 'pointer', fontFamily: 'inherit',
             textTransform: 'capitalize',
           }}>
             {f === 'all' ? `All (${reports.length})` : `${f} (${reports.filter(r => r.status === f).length})`}
@@ -201,7 +201,7 @@ export default function AdminReportsTab({ onSuccess, onError }) {
       {loading ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontWeight: 700 }}>Loading reports...</div>
       ) : filtered.length === 0 ? (
-        <div style={{ ...cardStyle('#FFF0F5'), textAlign: 'center', padding: 40 }}>
+        <div style={{ ...cardStyle('#FFFCFD'), textAlign: 'center', padding: 40 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🛡️</div>
           <div style={{ fontWeight: 900, fontSize: 16 }}>No {filter === 'all' ? '' : filter} reports</div>
         </div>
@@ -211,7 +211,7 @@ export default function AdminReportsTab({ onSuccess, onError }) {
             const sc = STATUS_COLORS[r.status] || STATUS_COLORS.pending
             const isBusy = busyId === r.id
             return (
-              <div key={r.id} style={cardStyle('#FFF0F5')}>
+              <div key={r.id} style={cardStyle('#FFFCFD')}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -221,7 +221,7 @@ export default function AdminReportsTab({ onSuccess, onError }) {
                         textTransform: 'uppercase',
                       }}>{r.status}</span>
                       <span style={{
-                        background: '#B3E5FC', border: '2px solid #1C1C3A', borderRadius: 50,
+                        background: '#B3E5FC', border: '2px solid #8A8AA8', borderRadius: 50,
                         padding: '2px 10px', fontSize: 11, fontWeight: 700,
                       }}>{r.target_type}</span>
                     </div>
@@ -250,7 +250,7 @@ export default function AdminReportsTab({ onSuccess, onError }) {
 
                 {r.status === 'pending' && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-                    <button disabled={isBusy} onClick={() => dismissReport(r)} style={actionBtn('#eee', '#1C1C3A')}>
+                    <button disabled={isBusy} onClick={() => dismissReport(r)} style={actionBtn('#eee', '#8A8AA8')}>
                       Dismiss
                     </button>
                     <button disabled={isBusy} onClick={() => resolveReport(r)} style={actionBtn('#4CAF82')}>

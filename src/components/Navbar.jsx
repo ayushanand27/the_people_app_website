@@ -81,19 +81,19 @@ export default function Navbar({ active, profile }) {
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(255,240,245,0.95)',
         backdropFilter: 'blur(12px)',
-        borderBottom: '3px solid #1C1C3A',
+        borderBottom: '3px solid #8A8AA8',
         padding: '14px 20px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 38, height: 38, background: '#FF85B3',
-            borderRadius: 12, border: '3px solid #1C1C3A',
+            width: 38, height: 38, background: '#FFB0D0',
+            borderRadius: 12, border: '3px solid #8A8AA8',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'white', fontWeight: 900, fontSize: 18,
-            boxShadow: '3px 3px 0 #1C1C3A'
+            boxShadow: '3px 3px 0 #8A8AA8'
           }}>P</div>
-          <span style={{ fontWeight: 900, fontSize: 18, color: '#1C1C3A' }}>
+          <span style={{ fontWeight: 900, fontSize: 18, color: '#5A5A78' }}>
             The People App
           </span>
         </div>
@@ -107,11 +107,11 @@ export default function Navbar({ active, profile }) {
           <button
             onClick={() => navigate('/notifications')}
             style={{
-              width: 40, height: 40, background: notifCount > 0 ? '#FF85B3' : 'white',
-              borderRadius: 12, border: '3px solid #1C1C3A',
+              width: 40, height: 40, background: notifCount > 0 ? '#FFB0D0' : 'white',
+              borderRadius: 12, border: '3px solid #8A8AA8',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: notifCount > 0 ? 'white' : '#1C1C3A',
-              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer', position: 'relative'
+              color: notifCount > 0 ? 'white' : '#8A8AA8',
+              boxShadow: '3px 3px 0 #8A8AA8', cursor: 'pointer', position: 'relative'
             }}
           >
             <Bell size={20} />
@@ -128,11 +128,11 @@ export default function Navbar({ active, profile }) {
           <button
             onClick={() => navigate(`/profile/${profile?.id}`)}
             style={{
-              width: 40, height: 40, background: '#FF85B3',
-              borderRadius: 12, border: '3px solid #1C1C3A',
+              width: 40, height: 40, background: '#FFB0D0',
+              borderRadius: 12, border: '3px solid #8A8AA8',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'white', fontWeight: 900, fontSize: 18,
-              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer'
+              boxShadow: '3px 3px 0 #8A8AA8', cursor: 'pointer'
             }}
           >
             {profile?.avatar_url ? (
@@ -148,7 +148,7 @@ export default function Navbar({ active, profile }) {
       {/* BOTTOM NAV */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-        background: 'white', borderTop: '3px solid #1C1C3A',
+        background: 'white', borderTop: '3px solid #8A8AA8',
         padding: '8px 12px 10px',
         display: 'flex', justifyContent: 'space-around'
       }}>
@@ -167,11 +167,11 @@ export default function Navbar({ active, profile }) {
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', gap: 4,
                 padding: '8px 14px', borderRadius: 16,
-                border: isActive ? '3px solid #1C1C3A' : '3px solid transparent',
-                background: isActive ? '#FF85B3' : 'transparent',
+                border: isActive ? '3px solid #8A8AA8' : '3px solid transparent',
+                background: isActive ? '#FFB0D0' : 'transparent',
                 color: isActive ? 'white' : '#9CA3AF',
                 fontWeight: 700, fontSize: 11,
-                boxShadow: isActive ? '3px 3px 0 #1C1C3A' : 'none',
+                boxShadow: isActive ? '3px 3px 0 #8A8AA8' : 'none',
                 cursor: 'pointer', transition: 'all 0.2s',
                 position: 'relative'
               }}

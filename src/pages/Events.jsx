@@ -51,7 +51,7 @@ export default function Events({ profile }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
       <Navbar active="events" profile={profile} />
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
@@ -67,10 +67,10 @@ export default function Events({ profile }) {
           {['upcoming','all'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '10px 20px', borderRadius: 50,
-              border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
-              background: tab === t ? '#FF85B3' : 'white',
-              color: tab === t ? 'white' : '#1C1C3A',
-              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer'
+              border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 14,
+              background: tab === t ? '#FFB0D0' : 'white',
+              color: tab === t ? 'white' : '#8A8AA8',
+              boxShadow: '3px 3px 0 #8A8AA8', cursor: 'pointer'
             }}>
               {t === 'upcoming' ? '🚀 Upcoming' : '📅 All'}
             </button>
@@ -81,9 +81,9 @@ export default function Events({ profile }) {
           <div style={{ textAlign: 'center', padding: 60, color: '#aaa', fontWeight: 700 }}>Loading events...</div>
         ) : events.length === 0 ? (
           <div style={{
-            background: 'white', border: '3px solid #1C1C3A',
+            background: 'white', border: '3px solid #8A8AA8',
             borderRadius: 20, padding: '40px 20px', textAlign: 'center',
-            boxShadow: '5px 5px 0 #1C1C3A'
+            boxShadow: '5px 5px 0 #8A8AA8'
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>No events in {browseCity} yet</div>
@@ -99,8 +99,8 @@ export default function Events({ profile }) {
               return (
                 <div key={ev.id} style={{
                   background: BG[i % BG.length],
-                  border: '3px solid #1C1C3A', borderRadius: 20,
-                  padding: '20px 20px', boxShadow: '5px 5px 0 #1C1C3A'
+                  border: '3px solid #8A8AA8', borderRadius: 20,
+                  padding: '20px 20px', boxShadow: '5px 5px 0 #8A8AA8'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                     <div style={{ flex: 1 }}>
@@ -122,10 +122,10 @@ export default function Events({ profile }) {
                         disabled={!isRsvpd && isFull}
                         style={{
                           padding: '10px 16px', borderRadius: 14,
-                          border: '3px solid #1C1C3A', fontWeight: 900, fontSize: 13,
+                          border: '3px solid #8A8AA8', fontWeight: 900, fontSize: 13,
                           background: isRsvpd ? '#FFB3CC' : isFull ? '#eee' : '#B8F0B8',
                           color: isRsvpd ? '#CC0044' : isFull ? '#aaa' : '#1C6B3A',
-                          boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer',
+                          boxShadow: '3px 3px 0 #8A8AA8', cursor: 'pointer',
                           flexShrink: 0, opacity: (!isRsvpd && isFull) ? 0.5 : 1
                         }}
                       >

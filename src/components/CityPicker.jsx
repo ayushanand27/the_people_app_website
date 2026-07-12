@@ -3,9 +3,9 @@ import { CITIES } from '../lib/cities'
 const BG = ['#FFB3CC', '#B8F0B8', '#B3E5FC', '#FFD699', '#E8D5FF', '#FFE566']
 
 const inputStyle = {
-  width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
+  width: '100%', border: '3px solid #8A8AA8', borderRadius: 50,
   padding: '12px 16px', fontSize: 15, fontWeight: 600,
-  background: '#FFF0F5', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+  background: '#FFFCFD', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
 }
 
 export default function CityPicker({
@@ -54,11 +54,11 @@ export default function CityPicker({
             style={{
               padding: layout === 'compact' ? '10px 8px' : '14px 10px',
               borderRadius: layout === 'compact' ? 14 : 16,
-              border: '3px solid #1C1C3A', fontWeight: 700,
+              border: '3px solid #8A8AA8', fontWeight: 700,
               fontSize: layout === 'compact' ? 13 : 14,
-              background: city === c ? '#FF85B3' : BG[i % BG.length],
-              color: city === c ? 'white' : '#1C1C3A',
-              boxShadow: city === c ? '4px 4px 0 #1C1C3A' : '3px 3px 0 #1C1C3A',
+              background: city === c ? '#FFB0D0' : BG[i % BG.length],
+              color: city === c ? 'white' : '#8A8AA8',
+              boxShadow: city === c ? '4px 4px 0 #8A8AA8' : '3px 3px 0 #8A8AA8',
               cursor: 'pointer', fontFamily: 'inherit',
               transform: city === c ? 'translate(-2px,-2px)' : 'none',
               transition: 'all 0.15s',
