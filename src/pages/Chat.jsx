@@ -34,9 +34,18 @@ export default function Chat({ profile }) {
     oldestCursorRef.current = null
     fetchReceiver()
     fetchMessages()
+    markThreadRead()
     return subscribeMessages()
   }, [receiverId, profile])
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages.length, receiverId])
+
+  async function markThreadRead() {
+    await supabase.from('messages')
+      .update({ read: true })
+      .eq('receiver_id', profile.id)
+      .eq('sender_id', receiverId)
+      .eq('read', false)
+  }
 
   async function fetchConversations() {
     setLoadError('')
@@ -141,10 +150,18 @@ export default function Chat({ profile }) {
   async function sendMessage(e) {
     e.preventDefault()
     if (!newMsg.trim()) return
-    await supabase.from('messages').insert({
-      sender_id: profile.id, receiver_id: receiverId, content: newMsg.trim()
-    })
+    const content = newMsg.trim()
     setNewMsg('')
+    const { data, error } = await supabase.from('messages').insert({
+      sender_id: profile.id, receiver_id: receiverId, content,
+    }).select().single()
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Send message') || 'Could not send message')
+      setNewMsg(content)
+      return
+    }
+    if (data) setMessages(prev => (prev.some(m => m.id === data.id) ? prev : [...prev, data]))
+    fetchConversations()
   }
 
   // CONVERSATION LIST
@@ -278,9 +295,9 @@ export default function Chat({ profile }) {
 
       {/* INPUT */}
       <form onSubmit={sendMessage} style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
+        position: 'fixed', bottom: 72, left: 0, right: 0,
         background: 'white', borderTop: '3px solid #1C1C3A',
-        padding: '12px 16px', display: 'flex', gap: 10
+        padding: '12px 16px', display: 'flex', gap: 10, zIndex: 40
       }}>
         <input
           type="text"

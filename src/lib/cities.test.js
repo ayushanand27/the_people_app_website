@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { getBrowseCity, resolveCity, isCityValid, setBrowseCity } from './cities'
+import { getBrowseCity, resolveCity, isCityValid, setBrowseCity, normalizeCity } from './cities'
+
+describe('normalizeCity', () => {
+  it('canonicalizes known cities case-insensitively', () => {
+    expect(normalizeCity('begusarai')).toBe('Begusarai')
+    expect(normalizeCity('BANGALORE')).toBe('Bangalore')
+  })
+})
 
 describe('getBrowseCity', () => {
   it('prefers a valid launch city stored in localStorage', () => {
@@ -9,6 +16,7 @@ describe('getBrowseCity', () => {
 
   it('falls back to profile city then default launch city', () => {
     expect(getBrowseCity('Jaipur')).toBe('Jaipur')
+    expect(getBrowseCity('begusarai')).toBe('Begusarai')
     expect(getBrowseCity('')).toBe('Bangalore')
   })
 })

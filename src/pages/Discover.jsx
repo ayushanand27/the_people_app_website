@@ -205,9 +205,11 @@ export default function Discover({ profile }) {
             boxShadow: '5px 5px 0 #1C1C3A'
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
-            <div style={{ fontWeight: 900, fontSize: 18 }}>No results found</div>
-            <div style={{ color: '#aaa', marginTop: 6 }}>
-              {search ? `No one matching "${search}"` : 'Try a different filter'}
+            <div style={{ fontWeight: 900, fontSize: 18 }}>No people in {browseCity} yet</div>
+            <div style={{ color: '#aaa', marginTop: 6, lineHeight: 1.5 }}>
+              {search
+                ? `No one matching "${search}"`
+                : 'Switch city in the top bar, or invite a friend to join this city.'}
             </div>
             <button
               onClick={() => { setSearch(''); setSelectedInterest('') }}
