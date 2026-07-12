@@ -7,6 +7,7 @@ import { useBrowseCity } from '../hooks/useBrowseCity'
 import { interestMatchScore, commonInterests, sortByCityThenMatch } from '../lib/matching'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
+import { getBlockedIds } from '../lib/social'
 
 const ALL_INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
@@ -32,8 +33,14 @@ export default function Discover({ profile }) {
   const [hasMore,        setHasMore]         = useState(true)
   const [loadingMore,    setLoadingMore]     = useState(false)
   const [page,           setPage]            = useState(0)
+  const [blockedIds,     setBlockedIds]      = useState([])
 
-  useEffect(() => { if (profile) fetchPeople(false) }, [profile, browseCity])
+  useEffect(() => {
+    if (!profile?.id) return
+    getBlockedIds(profile.id).then(setBlockedIds)
+  }, [profile?.id])
+
+  useEffect(() => { if (profile) fetchPeople(false) }, [profile, browseCity, blockedIds])
 
   async function fetchPeople(append = false) {
     if (append) setLoadingMore(true)
@@ -60,12 +67,13 @@ export default function Discover({ profile }) {
       return
     }
 
-    const batch = data || []
-    setHasMore(batch.length === PAGE_SIZE)
+    const batch = (data || []).filter(p => !blockedIds.includes(p.id))
+    setHasMore((data || []).length === PAGE_SIZE)
     setPage(nextPage)
     setPeople(prev => {
       const merged = append ? [...prev, ...batch] : batch
       const deduped = [...new Map(merged.map(p => [p.id, p])).values()]
+        .filter(p => !blockedIds.includes(p.id))
       return sortByCityThenMatch(deduped, profile.interests, browseCity)
     })
     setLoading(false)

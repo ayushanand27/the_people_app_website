@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { MessageCircle, Settings, UserPlus, UserCheck } from 'lucide-react'
-import { isFollowing, followUser, unfollowUser } from '../lib/social'
+import { isFollowing, followUser, unfollowUser, getBlockedIds } from '../lib/social'
 import { track } from '../lib/analytics'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
@@ -23,9 +23,18 @@ export default function Profile({ profile }) {
   const fetchUser = useCallback(async () => {
     setLoading(true)
     setLoadError('')
+    if (profile?.id && id && id !== profile.id) {
+      const blockedIds = await getBlockedIds(profile.id)
+      if (blockedIds.includes(id)) {
+        setUser(null)
+        setLoadError('This profile isn’t available.')
+        setLoading(false)
+        return
+      }
+    }
     const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single()
     if (error) {
-      setLoadError(reportSupabaseError(error, 'Profile') || 'Failed to load profile')
+      setLoadError(reportSupabaseError(error, 'Profile') || 'This profile isn’t available.')
       setUser(null)
       setLoading(false)
       return

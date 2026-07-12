@@ -143,12 +143,15 @@ export async function blockUser(blockerId, blockedId) {
   return !error
 }
 
+/** IDs of users blocked in either direction (you blocked them, or they blocked you). */
 export async function getBlockedIds(userId) {
   if (!userId) return []
   const { data, error } = await supabase
     .from('blocks')
-    .select('blocked_id')
-    .eq('blocker_id', userId)
+    .select('blocker_id, blocked_id')
+    .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`)
   soft(error, 'getBlockedIds')
-  return (data || []).map(b => b.blocked_id)
+  return [...new Set(
+    (data || []).map(b => (b.blocker_id === userId ? b.blocked_id : b.blocker_id))
+  )]
 }

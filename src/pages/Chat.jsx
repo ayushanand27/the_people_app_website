@@ -7,7 +7,7 @@ import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 import { checkChatText } from '../lib/chatSafety'
 import { moderateChatText, moderateChatImage } from '../lib/ai'
-import { reportContent, blockUser } from '../lib/social'
+import { reportContent, blockUser, getBlockedIds } from '../lib/social'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -59,6 +59,7 @@ export default function Chat({ profile }) {
   async function fetchConversations() {
     setLoadError('')
     setLoading(true)
+    const blockedIds = await getBlockedIds(profile.id)
     const { data, error } = await supabase.from('messages')
       .select('sender_id, receiver_id')
       .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
@@ -68,7 +69,11 @@ export default function Chat({ profile }) {
       return
     }
     if (!data) { setLoading(false); return }
-    const ids = [...new Set(data.map(m => m.sender_id === profile.id ? m.receiver_id : m.sender_id))]
+    const ids = [...new Set(
+      data
+        .map(m => m.sender_id === profile.id ? m.receiver_id : m.sender_id)
+        .filter(id => !blockedIds.includes(id))
+    )]
     if (ids.length === 0) { setConversations([]); setLoading(false); return }
     const { data: profiles, error: profileError } = await supabase.from('profiles')
       .select('id,full_name,username,city').in('id', ids)
@@ -82,10 +87,18 @@ export default function Chat({ profile }) {
   }
 
   async function fetchReceiver() {
+    const blockedIds = await getBlockedIds(profile.id)
+    if (blockedIds.includes(receiverId)) {
+      setReceiver(null)
+      setLoadError('You can’t message this user — one of you has blocked the other.')
+      setTimeout(() => navigate('/chat'), 1500)
+      return
+    }
     const { data, error } = await supabase.from('profiles')
       .select('id,full_name,username,city').eq('id', receiverId).single()
     if (error) {
-      setLoadError(reportSupabaseError(error, 'Chat receiver') || 'Failed to load chat')
+      setReceiver(null)
+      setLoadError(reportSupabaseError(error, 'Chat receiver') || 'This profile isn’t available.')
       return
     }
     setReceiver(data)
@@ -214,12 +227,12 @@ export default function Chat({ profile }) {
 
   async function handleBlock() {
     if (!receiverId || safetyBusy) return
-    if (!window.confirm(`Block ${receiver?.full_name || 'this user'}? They won't be able to message you.`)) return
+    if (!window.confirm(`Block ${receiver?.full_name || 'this user'}? They won’t be able to message you or see your profile.`)) return
     setSafetyBusy(true)
     const ok = await blockUser(profile.id, receiverId)
     setSafetyBusy(false)
     if (ok) {
-      alert('User blocked.')
+      alert('User blocked. They can’t message you or see your profile.')
       navigate('/chat')
       fetchConversations()
     } else {
