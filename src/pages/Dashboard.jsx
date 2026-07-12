@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { track } from '../lib/analytics'
 import { fetchVerifiedListings } from '../lib/localListings'
-import { sortByMatchScore, interestMatchScore, commonInterests } from '../lib/matching'
+import { sortByCityThenMatch, interestMatchScore, commonInterests } from '../lib/matching'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 import { useBrowseCity } from '../hooks/useBrowseCity'
@@ -29,9 +29,8 @@ export default function Dashboard({ profile }) {
       supabase.from('profiles')
         .select('id,full_name,username,city,interests,avatar_url')
         .neq('id', profile.id)
-        .eq('city', city || profile.city)
         .eq('onboarding_complete', true)
-        .limit(30),
+        .limit(40),
       supabase.from('groups').select('*').eq('city', city || profile.city).limit(3),
       supabase.from('events').select('*')
         .eq('city', city || profile.city)
@@ -54,7 +53,7 @@ export default function Dashboard({ profile }) {
       return
     }
 
-    setMatches(sortByMatchScore(matchesRes.data || [], profile.interests).slice(0, 6))
+    setMatches(sortByCityThenMatch(matchesRes.data || [], profile.interests, city).slice(0, 6))
     setGroups(groupsRes.data || [])
     setEvents(eventsRes.data || [])
     setLocalPreview(localRes.data || [])

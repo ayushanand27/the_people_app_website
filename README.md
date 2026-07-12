@@ -18,20 +18,26 @@ If you (the author) want to include a personal motivation note, add a short para
 - Authentication: Email/password and Google OAuth (via Supabase)
 - Onboarding flow: collect name, username, city, interests (3–5)
 - Profiles: view, edit, avatar uploads (Supabase Storage)
-- Discovery: search and filter profiles by city, interest and free-text
-- Groups: create, join/leave, list members (Admin CRUD for groups)
-- Events: create, RSVP/cancel RSVP, list upcoming/all events
-- Chat: 1:1 messaging backed by a `messages` table + Supabase realtime channels
-- Moments: upload vertical videos (Cloudinary upload from client), like/unlike moments
-- Admin panel: basic CRUD for groups/events and user listing
-- Optional AI helper: `src/lib/ai.js` generates icebreakers via OpenAI if configured
+- Discovery: **browse-city people first**, then other cities (cross-city messaging); filter by interest and search
+- Groups: join/leave, list members (Admin CRUD for groups)
+- Events: RSVP/cancel, list upcoming/all (Admin CRUD)
+- Chat: 1:1 messaging + **image attachments** + Supabase realtime; works across cities
+- Local listings: verified shops/services by city
+- Moments: vertical videos (Cloudinary), likes/comments/bookmarks
+- Settings: profile edit, delete account, privacy/terms
+- Admin panel: groups/events/listings/reports
+- Optional AI helper: `src/lib/ai.js` (icebreakers / moderation via edge functions)
+
+## Live URL
+
+- Production: https://the-people-app-website.vercel.app/
 
 ## Architecture & high-level flow
 
 - Frontend: React + Vite. Pages live under `src/pages`, reusable components in `src/components`.
 - Backend: Client uses Supabase directly — no custom server in this project. The client calls PostgREST endpoints, Storage and Realtime via `@supabase/supabase-js`.
 - Realtime: Supabase Realtime (Postgres changes) provides live message updates and unread notifications.
-- Storage/Media: Avatars stored in Supabase Storage bucket `avatars`. Long-form video uploads use Cloudinary client uploads; the returned URL is saved to the `videos` table.
+- Storage/Media: Avatars in `avatars`; chat images in `chat-images`; listing images in `listing-images`. Moments videos use Cloudinary (signed uploads via edge function).
 
 ## Where to look in the code
 
@@ -60,7 +66,9 @@ Create these tables in Supabase (or adapt):
   - created_at, updated_at
 
 - messages
-  - id, sender_id, receiver_id, content, read (bool), created_at
+  - id, sender_id, receiver_id, content, image_url, read (bool), created_at
+  - Chat is **not** city-scoped — any two authenticated users can message (unless blocked)
+  - Images stored in Storage bucket `chat-images` under `{user_id}/...`
 
 - groups
   - id, name, description, city, interests (text[]), max_members, created_by, created_at
@@ -93,9 +101,10 @@ Notes: many queries rely on `postgrest` aggregated counts: e.g. `.select('*, eve
   - Fetch profile: `supabase.from('profiles').select('*').eq('id', userId).single()`
   - Update: `supabase.from('profiles').update(...).eq('id', profile.id)`
 - Messaging & realtime
-  - Insert: `supabase.from('messages').insert({ sender_id, receiver_id, content })`
+  - Insert: `supabase.from('messages').insert({ sender_id, receiver_id, content, image_url })`
   - Query conversation: complex `.or()` filters using `and(...)` (see `src/pages/Chat.jsx`)
-  - Realtime subscribe: `supabase.channel('msgs').on('postgres_changes', {event:'INSERT', table:'messages'}, handler)`
+  - Realtime subscribe: `supabase.channel('msgs-${id}').on('postgres_changes', {event:'INSERT', table:'messages'}, handler)`
+  - Chat images: `.storage.from('chat-images').upload(path, file)` then `getPublicUrl`
 - Groups & group_members
   - `.from('groups').select('*, group_members(count)')`
   - join: `.from('group_members').insert({ group_id, user_id })`
@@ -107,7 +116,8 @@ Notes: many queries rely on `postgrest` aggregated counts: e.g. `.select('*, eve
   - insert after upload: `.insert({ user_id, title, video_url, thumbnail_url, duration })`
 - Storage
   - Avatars: `.storage.from('avatars').upload(path, file, { upsert: true })`
-  - Public URL: `.storage.from('avatars').getPublicUrl(path)`
+  - Chat images: `.storage.from('chat-images').upload(`${userId}/${ts}.ext`, file)`
+  - Public URL: `.storage.from(...).getPublicUrl(path)`
 
 Because the app is client-first, ensure Row Level Security (RLS) policies on Supabase tables for production.
 

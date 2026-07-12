@@ -1,7 +1,7 @@
 # The People App — Setup & Deploy Guide
 
 Project: **the_people_app** · Supabase ref: `zswjndrpokyqedxipfka`  
-Live URL: https://the-prople-app-website.vercel.app
+Live URL: https://the-people-app-website.vercel.app
 
 ---
 
@@ -48,13 +48,13 @@ Edge functions deployed: `cloudinary-sign`, `ai-proxy` (both ACTIVE).
 
 **Authentication → URL Configuration**:
 
-- Site URL: `https://the-prople-app-website.vercel.app`
+- Site URL: `https://the-people-app-website.vercel.app`
 - Redirect URLs:
   ```
   http://localhost:5173
   http://localhost:5175
-  https://the-prople-app-website.vercel.app
-  https://the-prople-app-website.vercel.app/auth
+  https://the-people-app-website.vercel.app
+  https://the-people-app-website.vercel.app/auth
   ```
 
 **Authentication → Providers → Google** (required for "Continue with Google"):

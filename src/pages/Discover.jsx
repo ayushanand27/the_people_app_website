@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { Search } from 'lucide-react'
 import { useBrowseCity } from '../hooks/useBrowseCity'
-import { interestMatchScore, commonInterests, sortByMatchScore } from '../lib/matching'
+import { interestMatchScore, commonInterests, sortByCityThenMatch } from '../lib/matching'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 
@@ -51,7 +51,6 @@ export default function Discover({ profile }) {
       .select('id,full_name,username,city,interests,avatar_url,bio')
       .neq('id', profile.id)
       .eq('onboarding_complete', true)
-      .eq('city', browseCity)
     const { data, error } = await query.range(from, to)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Discover') || 'Failed to load people')
@@ -67,7 +66,7 @@ export default function Discover({ profile }) {
     setPeople(prev => {
       const merged = append ? [...prev, ...batch] : batch
       const deduped = [...new Map(merged.map(p => [p.id, p])).values()]
-      return sortByMatchScore(deduped, profile.interests)
+      return sortByCityThenMatch(deduped, profile.interests, browseCity)
     })
     setLoading(false)
     setLoadingMore(false)
@@ -87,7 +86,15 @@ export default function Discover({ profile }) {
 
       return matchSearch && matchInterest
     })
-    .sort((a, b) => interestMatchScore(profile?.interests, b.interests) - interestMatchScore(profile?.interests, a.interests))
+    .sort((a, b) => {
+      const aLocal = (a.city || '').toLowerCase() === browseCity.toLowerCase() ? 0 : 1
+      const bLocal = (b.city || '').toLowerCase() === browseCity.toLowerCase() ? 0 : 1
+      if (aLocal !== bLocal) return aLocal - bLocal
+      return interestMatchScore(profile?.interests, b.interests) - interestMatchScore(profile?.interests, a.interests)
+    })
+
+  const localCount = filtered.filter(p => (p.city || '').toLowerCase() === browseCity.toLowerCase()).length
+  const otherCount = filtered.length - localCount
 
   return (
     <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
@@ -96,8 +103,10 @@ export default function Discover({ profile }) {
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>People in {browseCity} 🔍</div>
-          <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>Discover by interests · {browseCity}</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>Discover people 🔍</div>
+          <div style={{ color: '#888', marginTop: 4, fontSize: 15 }}>
+            {browseCity} first · then other cities · message anyone
+          </div>
         </div>
 
         <InlineError message={loadError} onRetry={() => fetchPeople(false)} />
@@ -188,7 +197,9 @@ export default function Discover({ profile }) {
 
         {/* RESULTS COUNT */}
         <div style={{ fontWeight: 700, fontSize: 13, color: '#888', marginBottom: 14 }}>
-          {loading ? 'Finding people...' : `${filtered.length} people found`}
+          {loading
+            ? 'Finding people...'
+            : `${filtered.length} people · ${localCount} in ${browseCity}${otherCount ? ` · ${otherCount} other cities` : ''}`}
           {selectedInterest && ` · filtered by ${selectedInterest}`}
           {search && ` · searching "${search}"`}
         </div>
@@ -205,11 +216,11 @@ export default function Discover({ profile }) {
             boxShadow: '5px 5px 0 #1C1C3A'
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
-            <div style={{ fontWeight: 900, fontSize: 18 }}>No people in {browseCity} yet</div>
+            <div style={{ fontWeight: 900, fontSize: 18 }}>No people found</div>
             <div style={{ color: '#aaa', marginTop: 6, lineHeight: 1.5 }}>
               {search
                 ? `No one matching "${search}"`
-                : 'Switch city in the top bar, or invite a friend to join this city.'}
+                : 'Invite friends to join — then message across cities.'}
             </div>
             <button
               onClick={() => { setSearch(''); setSelectedInterest('') }}
@@ -257,7 +268,20 @@ export default function Discover({ profile }) {
 
                   <div style={{ fontWeight: 900, fontSize: 15 }}>{p.full_name}</div>
                   <div style={{ color: '#888', fontSize: 12 }}>@{p.username}</div>
-                  <div style={{ color: '#888', fontSize: 12, margin: '4px 0 8px' }}>📍 {p.city}</div>
+                  <div style={{ color: '#888', fontSize: 12, margin: '4px 0 8px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span>📍 {p.city}</span>
+                    {(p.city || '').toLowerCase() === browseCity.toLowerCase() ? (
+                      <span style={{
+                        fontSize: 10, fontWeight: 900, background: '#B8F0B8',
+                        border: '2px solid #1C1C3A', borderRadius: 50, padding: '1px 8px', color: '#1C1C3A',
+                      }}>Your city</span>
+                    ) : (
+                      <span style={{
+                        fontSize: 10, fontWeight: 900, background: 'white',
+                        border: '2px solid #1C1C3A', borderRadius: 50, padding: '1px 8px', color: '#1C1C3A',
+                      }}>Other city</span>
+                    )}
+                  </div>
 
                   {/* MATCH SCORE */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>

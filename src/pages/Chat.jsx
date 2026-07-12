@@ -2,13 +2,14 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import { Send, ArrowLeft } from 'lucide-react'
+import { Send, ArrowLeft, ImagePlus, X } from 'lucide-react'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
 const MESSAGE_PAGE = 50
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 export default function Chat({ profile }) {
   const navigate           = useNavigate()
@@ -16,11 +17,14 @@ export default function Chat({ profile }) {
   const bottomRef          = useRef(null)
   const messagesRef        = useRef(null)
   const oldestCursorRef    = useRef(null)
+  const fileRef            = useRef(null)
 
   const [conversations, setConversations] = useState([])
   const [messages,      setMessages]      = useState([])
   const [receiver,      setReceiver]      = useState(null)
   const [newMsg,        setNewMsg]        = useState('')
+  const [pendingImage,  setPendingImage]  = useState(null)
+  const [uploading,     setUploading]     = useState(false)
   const [loading,       setLoading]       = useState(true)
   const [loadError,     setLoadError]     = useState('')
   const [hasOlder,      setHasOlder]      = useState(false)
@@ -32,6 +36,7 @@ export default function Chat({ profile }) {
     setLoadError('')
     setHasOlder(false)
     oldestCursorRef.current = null
+    setPendingImage(null)
     fetchReceiver()
     fetchMessages()
     markThreadRead()
@@ -60,9 +65,9 @@ export default function Chat({ profile }) {
     }
     if (!data) { setLoading(false); return }
     const ids = [...new Set(data.map(m => m.sender_id === profile.id ? m.receiver_id : m.sender_id))]
-    if (ids.length === 0) { setLoading(false); return }
+    if (ids.length === 0) { setConversations([]); setLoading(false); return }
     const { data: profiles, error: profileError } = await supabase.from('profiles')
-      .select('id,full_name,username').in('id', ids)
+      .select('id,full_name,username,city').in('id', ids)
     if (profileError) {
       setLoadError(reportSupabaseError(profileError, 'Chat profiles') || 'Failed to load conversations')
       setLoading(false)
@@ -141,27 +146,76 @@ export default function Chat({ profile }) {
         const m = payload.new
         if ((m.sender_id === profile.id && m.receiver_id === receiverId) ||
             (m.sender_id === receiverId && m.receiver_id === profile.id)) {
-          setMessages(prev => [...prev, m])
+          setMessages(prev => (prev.some(x => x.id === m.id) ? prev : [...prev, m]))
         }
       }).subscribe()
     return () => supabase.removeChannel(ch)
   }
 
-  async function sendMessage(e) {
-    e.preventDefault()
-    if (!newMsg.trim()) return
-    const content = newMsg.trim()
-    setNewMsg('')
-    const { data, error } = await supabase.from('messages').insert({
-      sender_id: profile.id, receiver_id: receiverId, content,
-    }).select().single()
-    if (error) {
-      setLoadError(reportSupabaseError(error, 'Send message') || 'Could not send message')
-      setNewMsg(content)
+  function onPickImage(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setLoadError('Please choose an image (JPG, PNG, WebP)')
       return
     }
-    if (data) setMessages(prev => (prev.some(m => m.id === data.id) ? prev : [...prev, data]))
-    fetchConversations()
+    if (file.size > MAX_IMAGE_BYTES) {
+      setLoadError('Image must be under 5MB')
+      return
+    }
+    setLoadError('')
+    setPendingImage({
+      file,
+      preview: URL.createObjectURL(file),
+    })
+  }
+
+  function clearPendingImage() {
+    if (pendingImage?.preview) URL.revokeObjectURL(pendingImage.preview)
+    setPendingImage(null)
+  }
+
+  async function uploadChatImage(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+    const path = `${profile.id}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('chat-images').upload(path, file, {
+      upsert: false,
+      contentType: file.type,
+    })
+    if (error) throw error
+    const { data } = supabase.storage.from('chat-images').getPublicUrl(path)
+    return data.publicUrl
+  }
+
+  async function sendMessage(e) {
+    e.preventDefault()
+    const content = newMsg.trim()
+    if (!content && !pendingImage) return
+
+    setUploading(true)
+    setLoadError('')
+    let imageUrl = null
+    try {
+      if (pendingImage?.file) {
+        imageUrl = await uploadChatImage(pendingImage.file)
+      }
+      const { data, error } = await supabase.from('messages').insert({
+        sender_id: profile.id,
+        receiver_id: receiverId,
+        content: content || '',
+        image_url: imageUrl,
+      }).select().single()
+      if (error) throw error
+      setNewMsg('')
+      clearPendingImage()
+      if (data) setMessages(prev => (prev.some(m => m.id === data.id) ? prev : [...prev, data]))
+      fetchConversations()
+    } catch (err) {
+      setLoadError(reportSupabaseError(err, 'Send message') || err.message || 'Could not send message')
+    } finally {
+      setUploading(false)
+    }
   }
 
   // CONVERSATION LIST
@@ -169,7 +223,10 @@ export default function Chat({ profile }) {
     <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
       <Navbar active="chat" profile={profile} />
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-        <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 20 }}>Messages 💬</div>
+        <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Messages 💬</div>
+        <div style={{ color: '#888', fontSize: 14, fontWeight: 600, marginBottom: 20 }}>
+          Chat across cities — same city or anywhere
+        </div>
 
         <InlineError message={loadError} onRetry={fetchConversations} />
 
@@ -214,7 +271,7 @@ export default function Chat({ profile }) {
                 }}>{c.full_name?.[0] || '?'}</div>
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 16 }}>{c.full_name}</div>
-                  <div style={{ color: '#666', fontSize: 13 }}>@{c.username}</div>
+                  <div style={{ color: '#666', fontSize: 13 }}>@{c.username}{c.city ? ` · ${c.city}` : ''}</div>
                 </div>
               </button>
             ))}
@@ -228,7 +285,6 @@ export default function Chat({ profile }) {
   return (
     <div style={{ minHeight: '100vh', background: '#FFF0F5', display: 'flex', flexDirection: 'column' }}>
 
-      {/* HEADER */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: 'white', borderBottom: '3px solid #1C1C3A',
@@ -250,15 +306,16 @@ export default function Chat({ profile }) {
 
         <div>
           <div style={{ fontWeight: 900, fontSize: 16 }}>{receiver?.full_name}</div>
-          <div style={{ color: '#888', fontSize: 13 }}>@{receiver?.username}</div>
+          <div style={{ color: '#888', fontSize: 13 }}>
+            @{receiver?.username}{receiver?.city ? ` · ${receiver.city}` : ''}
+          </div>
         </div>
       </div>
 
-      {/* MESSAGES */}
       <div
         ref={messagesRef}
         onScroll={handleMessagesScroll}
-        style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: 100, display: 'flex', flexDirection: 'column', gap: 10 }}
+        style={{ flex: 1, overflowY: 'auto', padding: '16px', paddingBottom: pendingImage ? 180 : 120, display: 'flex', flexDirection: 'column', gap: 10 }}
       >
         <InlineError
           message={loadError}
@@ -273,6 +330,9 @@ export default function Chat({ profile }) {
           <div style={{ textAlign: 'center', padding: 40 }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>👋</div>
             <div style={{ color: '#888', fontWeight: 600 }}>Say hello to {receiver?.full_name}!</div>
+            {receiver?.city && (
+              <div style={{ color: '#aaa', fontSize: 13, marginTop: 6 }}>They&apos;re in {receiver.city}</div>
+            )}
           </div>
         )}
         {messages.map(msg => {
@@ -280,44 +340,94 @@ export default function Chat({ profile }) {
           return (
             <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start' }}>
               <div style={{
-                maxWidth: '72%', padding: '12px 16px',
+                maxWidth: '72%', padding: msg.image_url && !msg.content ? 8 : '12px 16px',
                 borderRadius: 20, border: '3px solid #1C1C3A',
                 fontWeight: 600, fontSize: 15,
                 boxShadow: '3px 3px 0 #1C1C3A',
                 background: isMine ? '#FF85B3' : 'white',
-                color: isMine ? 'white' : '#1C1C3A'
-              }}>{msg.content}</div>
+                color: isMine ? 'white' : '#1C1C3A',
+              }}>
+                {msg.image_url && (
+                  <a href={msg.image_url} target="_blank" rel="noreferrer" style={{ display: 'block' }}>
+                    <img
+                      src={msg.image_url}
+                      alt="Shared"
+                      style={{
+                        maxWidth: '100%', maxHeight: 240, borderRadius: 12,
+                        border: '2px solid #1C1C3A', display: 'block',
+                        marginBottom: msg.content ? 8 : 0,
+                      }}
+                    />
+                  </a>
+                )}
+                {msg.content ? msg.content : null}
+              </div>
             </div>
           )
         })}
         <div ref={bottomRef} />
       </div>
 
-      {/* INPUT */}
       <form onSubmit={sendMessage} style={{
         position: 'fixed', bottom: 72, left: 0, right: 0,
         background: 'white', borderTop: '3px solid #1C1C3A',
-        padding: '12px 16px', display: 'flex', gap: 10, zIndex: 40
+        padding: '12px 16px', zIndex: 40
       }}>
-        <input
-          type="text"
-          placeholder="Type a message..."
-          value={newMsg}
-          onChange={e => setNewMsg(e.target.value)}
-          style={{
-            flex: 1, border: '3px solid #1C1C3A', borderRadius: 50,
-            padding: '12px 20px', fontSize: 15, fontWeight: 600,
-            background: '#FFF0F5', outline: 'none',
-            fontFamily: 'inherit'
-          }}
-        />
-        <button type="submit" disabled={!newMsg.trim()} style={{
-          width: 50, height: 50, background: '#FF85B3',
-          border: '3px solid #1C1C3A', borderRadius: 16,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'white', boxShadow: '3px 3px 0 #1C1C3A',
-          cursor: 'pointer', opacity: newMsg.trim() ? 1 : 0.4
-        }}><Send size={20} /></button>
+        {pendingImage && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <img
+              src={pendingImage.preview}
+              alt="Preview"
+              style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 12, border: '2px solid #1C1C3A' }}
+            />
+            <button type="button" onClick={clearPendingImage} style={{
+              width: 32, height: 32, borderRadius: 10, border: '2px solid #1C1C3A',
+              background: '#FFE0E0', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickImage} />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            title="Send image"
+            style={{
+              width: 50, height: 50, background: 'white',
+              border: '3px solid #1C1C3A', borderRadius: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#1C1C3A', boxShadow: '3px 3px 0 #1C1C3A',
+              cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            <ImagePlus size={20} />
+          </button>
+          <input
+            type="text"
+            placeholder="Type a message..."
+            value={newMsg}
+            onChange={e => setNewMsg(e.target.value)}
+            disabled={uploading}
+            style={{
+              flex: 1, border: '3px solid #1C1C3A', borderRadius: 50,
+              padding: '12px 20px', fontSize: 15, fontWeight: 600,
+              background: '#FFF0F5', outline: 'none',
+              fontFamily: 'inherit'
+            }}
+          />
+          <button type="submit" disabled={uploading || (!newMsg.trim() && !pendingImage)} style={{
+            width: 50, height: 50, background: '#FF85B3',
+            border: '3px solid #1C1C3A', borderRadius: 16,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white', boxShadow: '3px 3px 0 #1C1C3A',
+            cursor: 'pointer', opacity: uploading || (!newMsg.trim() && !pendingImage) ? 0.4 : 1,
+            flexShrink: 0,
+          }}><Send size={20} /></button>
+        </div>
       </form>
     </div>
   )

@@ -15,3 +15,14 @@ export function sortByMatchScore(people, myInterests) {
     (a, b) => interestMatchScore(myInterests, b.interests) - interestMatchScore(myInterests, a.interests)
   )
 }
+
+/** Same-city people first, then others by interest match (enables cross-city chat discovery) */
+export function sortByCityThenMatch(people, myInterests, browseCity = '') {
+  const city = (browseCity || '').toLowerCase()
+  return [...people].sort((a, b) => {
+    const aLocal = city && (a.city || '').toLowerCase() === city ? 0 : 1
+    const bLocal = city && (b.city || '').toLowerCase() === city ? 0 : 1
+    if (aLocal !== bLocal) return aLocal - bLocal
+    return interestMatchScore(myInterests, b.interests) - interestMatchScore(myInterests, a.interests)
+  })
+}

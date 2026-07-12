@@ -3,6 +3,7 @@ import {
   interestMatchScore,
   commonInterests,
   sortByMatchScore,
+  sortByCityThenMatch,
 } from './matching'
 
 describe('interestMatchScore', () => {
@@ -34,5 +35,17 @@ describe('sortByMatchScore', () => {
     ]
     const sorted = sortByMatchScore(people, ['Tech', 'Art', 'Gaming'])
     expect(sorted.map(p => p.id)).toEqual(['high', 'mid', 'low'])
+  })
+})
+
+describe('sortByCityThenMatch', () => {
+  it('puts browse-city people before others, then by match', () => {
+    const people = [
+      { id: 'other-high', city: 'Surat', interests: ['Tech', 'Art'] },
+      { id: 'local-low', city: 'Begusarai', interests: ['Chess'] },
+      { id: 'local-high', city: 'Begusarai', interests: ['Tech', 'Art'] },
+    ]
+    const sorted = sortByCityThenMatch(people, ['Tech', 'Art'], 'Begusarai')
+    expect(sorted.map(p => p.id)).toEqual(['local-high', 'local-low', 'other-high'])
   })
 })
