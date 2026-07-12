@@ -70,16 +70,16 @@ export default function Dashboard({ profile }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
       <Navbar active="dashboard" profile={profile} />
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
 
         {/* GREETING BANNER */}
         <div style={{
-          background: '#FFB0D0', border: '3px solid #8A8AA8',
+          background: '#FF85B3', border: '3px solid #1C1C3A',
           borderRadius: 24, padding: '24px 24px',
-          boxShadow: '6px 6px 0 #8A8AA8', marginBottom: 28
+          boxShadow: '6px 6px 0 #1C1C3A', marginBottom: 28
         }}>
           <div style={{ fontSize: 28, fontWeight: 900, color: 'white' }}>
             Hey {profile?.full_name?.split(' ')[0]} 👋
@@ -91,7 +91,7 @@ export default function Dashboard({ profile }) {
             {profile?.interests?.slice(0,3).map(i => (
               <span key={i} style={{
                 background: 'white', color: '#FF6B9D',
-                border: '2px solid #8A8AA8',
+                border: '2px solid #1C1C3A',
                 borderRadius: 50, padding: '4px 12px',
                 fontSize: 12, fontWeight: 700
               }}>{i}</span>
@@ -114,9 +114,9 @@ export default function Dashboard({ profile }) {
               type="button"
               onClick={() => navigate(hub.path)}
               style={{
-                background: hub.bg, border: '3px solid #8A8AA8',
+                background: hub.bg, border: '3px solid #1C1C3A',
                 borderRadius: 20, padding: '18px 16px', textAlign: 'left',
-                cursor: 'pointer', boxShadow: '5px 5px 0 #8A8AA8',
+                cursor: 'pointer', boxShadow: '5px 5px 0 #1C1C3A',
                 fontFamily: 'inherit',
               }}
             >
@@ -139,9 +139,9 @@ export default function Dashboard({ profile }) {
           </div>
           {localPreview.length === 0 ? (
             <div style={{
-              background: 'white', border: '3px solid #8A8AA8',
+              background: 'white', border: '3px solid #1C1C3A',
               borderRadius: 20, padding: '28px 20px', textAlign: 'center',
-              boxShadow: '4px 4px 0 #8A8AA8',
+              boxShadow: '4px 4px 0 #1C1C3A',
             }}>
               <div style={{ fontWeight: 900 }}>No local listings yet</div>
               <div style={{ color: '#aaa', fontSize: 14, marginTop: 4 }}>Verified shops coming soon</div>
@@ -154,9 +154,9 @@ export default function Dashboard({ profile }) {
                   type="button"
                   onClick={() => navigate(`/local/${item.id}`)}
                   style={{
-                    background: BG[i % BG.length], border: '3px solid #8A8AA8',
+                    background: BG[i % BG.length], border: '3px solid #1C1C3A',
                     borderRadius: 16, padding: '14px 16px', textAlign: 'left',
-                    cursor: 'pointer', boxShadow: '4px 4px 0 #8A8AA8', fontFamily: 'inherit',
+                    cursor: 'pointer', boxShadow: '4px 4px 0 #1C1C3A', fontFamily: 'inherit',
                   }}
                 >
                   <div style={{ fontWeight: 900 }}>{item.title}</div>
@@ -175,7 +175,7 @@ export default function Dashboard({ profile }) {
             <div style={{ fontSize: 20, fontWeight: 900 }}>Your matches ✨</div>
             <button
               onClick={() => navigate('/discover')}
-              style={{ color: '#FFB0D0', fontWeight: 700, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ color: '#FF85B3', fontWeight: 700, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' }}
             >
               See all →
             </button>
@@ -187,9 +187,9 @@ export default function Dashboard({ profile }) {
             </div>
           ) : matches.length === 0 ? (
             <div style={{
-              background: 'white', border: '3px solid #8A8AA8',
+              background: 'white', border: '3px solid #1C1C3A',
               borderRadius: 20, padding: '32px 20px', textAlign: 'center',
-              boxShadow: '4px 4px 0 #8A8AA8'
+              boxShadow: '4px 4px 0 #1C1C3A'
             }}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>🌟</div>
               <div style={{ fontWeight: 900, fontSize: 16 }}>No matches in your city yet</div>
@@ -209,29 +209,29 @@ export default function Dashboard({ profile }) {
                     }}
                     style={{
                       background: BG[i % BG.length],
-                      border: `3px solid #8A8AA8`,
+                      border: `3px solid #1C1C3A`,
                       borderRadius: 20, padding: 16,
                       textAlign: 'left', cursor: 'pointer',
-                      boxShadow: '5px 5px 0 #8A8AA8',
+                      boxShadow: '5px 5px 0 #1C1C3A',
                       transition: 'all 0.2s'
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #8A8AA8' }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #8A8AA8' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #1C1C3A' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #1C1C3A' }}
                   >
                     <div style={{
                       width: 52, height: 52, borderRadius: 16,
                       background: BORDER[i % BORDER.length],
-                      border: '3px solid #8A8AA8',
+                      border: '3px solid #1C1C3A',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: 'white', fontWeight: 900, fontSize: 22,
-                      marginBottom: 10, boxShadow: '2px 2px 0 #8A8AA8'
+                      marginBottom: 10, boxShadow: '2px 2px 0 #1C1C3A'
                     }}>
                       {m.full_name?.[0] || '?'}
                     </div>
-                    <div style={{ fontWeight: 900, fontSize: 15, color: '#5A5A78' }}>{m.full_name}</div>
+                    <div style={{ fontWeight: 900, fontSize: 15, color: '#1C1C3A' }}>{m.full_name}</div>
                     <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>📍 {m.city}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0' }}>
-                      <div style={{ flex: 1, height: 8, background: '#eee', borderRadius: 50, border: '1.5px solid #8A8AA8', overflow: 'hidden' }}>
+                      <div style={{ flex: 1, height: 8, background: '#eee', borderRadius: 50, border: '1.5px solid #1C1C3A', overflow: 'hidden' }}>
                         <div style={{ width: `${s}%`, height: '100%', background: '#4CAF82', borderRadius: 50 }} />
                       </div>
                       <span style={{ fontSize: 12, fontWeight: 900, color: '#4CAF82' }}>{s}%</span>
@@ -239,7 +239,7 @@ export default function Dashboard({ profile }) {
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                       {common.slice(0,2).map(i => (
                         <span key={i} style={{
-                          background: 'white', border: '2px solid #8A8AA8',
+                          background: 'white', border: '2px solid #1C1C3A',
                           borderRadius: 50, padding: '2px 8px',
                           fontSize: 11, fontWeight: 700
                         }}>
@@ -259,15 +259,15 @@ export default function Dashboard({ profile }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ fontSize: 20, fontWeight: 900 }}>Communities 🏘️</div>
             <button onClick={() => navigate('/groups')}
-              style={{ color: '#FFB0D0', fontWeight: 700, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' }}>
+              style={{ color: '#FF85B3', fontWeight: 700, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' }}>
               See all →
             </button>
           </div>
           {groups.length === 0 ? (
             <div style={{
-              background: 'white', border: '3px solid #8A8AA8',
+              background: 'white', border: '3px solid #1C1C3A',
               borderRadius: 20, padding: '32px 20px', textAlign: 'center',
-              boxShadow: '4px 4px 0 #8A8AA8'
+              boxShadow: '4px 4px 0 #1C1C3A'
             }}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>🏘️</div>
               <div style={{ fontWeight: 900, fontSize: 16 }}>No communities yet</div>
@@ -280,13 +280,13 @@ export default function Dashboard({ profile }) {
                   onClick={() => navigate('/groups')}
                   style={{
                     background: BG[i % BG.length],
-                    border: '3px solid #8A8AA8', borderRadius: 20,
+                    border: '3px solid #1C1C3A', borderRadius: 20,
                     padding: '18px 20px', textAlign: 'left',
-                    boxShadow: '5px 5px 0 #8A8AA8', cursor: 'pointer',
+                    boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #8A8AA8' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #8A8AA8' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #1C1C3A' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #1C1C3A' }}
                 >
                   <div style={{ fontWeight: 900, fontSize: 16 }}>{g.name}</div>
                   <div style={{ color: '#555', fontSize: 13, marginTop: 4 }}>{g.description}</div>
@@ -302,15 +302,15 @@ export default function Dashboard({ profile }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ fontSize: 20, fontWeight: 900 }}>Upcoming events 🎉</div>
             <button onClick={() => navigate('/events')}
-              style={{ color: '#FFB0D0', fontWeight: 700, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' }}>
+              style={{ color: '#FF85B3', fontWeight: 700, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' }}>
               See all →
             </button>
           </div>
           {events.length === 0 ? (
             <div style={{
-              background: 'white', border: '3px solid #8A8AA8',
+              background: 'white', border: '3px solid #1C1C3A',
               borderRadius: 20, padding: '32px 20px', textAlign: 'center',
-              boxShadow: '4px 4px 0 #8A8AA8'
+              boxShadow: '4px 4px 0 #1C1C3A'
             }}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>🎉</div>
               <div style={{ fontWeight: 900, fontSize: 16 }}>No events yet</div>
@@ -323,13 +323,13 @@ export default function Dashboard({ profile }) {
                   onClick={() => navigate('/events')}
                   style={{
                     background: BG[(i+2) % BG.length],
-                    border: '3px solid #8A8AA8', borderRadius: 20,
+                    border: '3px solid #1C1C3A', borderRadius: 20,
                     padding: '18px 20px', textAlign: 'left',
-                    boxShadow: '5px 5px 0 #8A8AA8', cursor: 'pointer',
+                    boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #8A8AA8' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #8A8AA8' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #1C1C3A' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #1C1C3A' }}
                 >
                   <div style={{ fontWeight: 900, fontSize: 16 }}>{ev.title}</div>
                   <div style={{ color: '#555', fontSize: 13, marginTop: 4 }}>{ev.description}</div>

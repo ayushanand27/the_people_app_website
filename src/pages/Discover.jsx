@@ -90,7 +90,7 @@ export default function Discover({ profile }) {
     .sort((a, b) => interestMatchScore(profile?.interests, b.interests) - interestMatchScore(profile?.interests, a.interests))
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
       <Navbar active="discover" profile={profile} />
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
@@ -105,9 +105,9 @@ export default function Discover({ profile }) {
         {/* SEARCH BAR */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          background: 'white', border: '3px solid #8A8AA8',
+          background: 'white', border: '3px solid #1C1C3A',
           borderRadius: 50, padding: '12px 20px',
-          boxShadow: '4px 4px 0 #8A8AA8', marginBottom: 14
+          boxShadow: '4px 4px 0 #1C1C3A', marginBottom: 14
         }}>
           <Search size={18} color="#aaa" />
           <input
@@ -119,12 +119,12 @@ export default function Discover({ profile }) {
               flex: 1, border: 'none', outline: 'none',
               fontSize: 15, fontWeight: 600,
               background: 'transparent', fontFamily: 'inherit',
-              color: '#5A5A78'
+              color: '#1C1C3A'
             }}
           />
           {search && (
             <button onClick={() => setSearch('')} style={{
-              background: '#FFB3CC', border: '2px solid #8A8AA8',
+              background: '#FFB3CC', border: '2px solid #1C1C3A',
               borderRadius: 50, width: 24, height: 24,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', fontWeight: 900, fontSize: 14
@@ -138,10 +138,10 @@ export default function Discover({ profile }) {
             onClick={() => setShowFilters(!showFilters)}
             style={{
               padding: '8px 16px', borderRadius: 50,
-              border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 13,
+              border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 13,
               background: selectedInterest ? '#B3E5FC' : 'white',
-              color: '#5A5A78',
-              boxShadow: '3px 3px 0 #8A8AA8', cursor: 'pointer',
+              color: '#1C1C3A',
+              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer',
               fontFamily: 'inherit'
             }}
           >
@@ -152,9 +152,9 @@ export default function Discover({ profile }) {
         {/* INTEREST FILTER DROPDOWN */}
         {showFilters && (
           <div style={{
-            background: 'white', border: '3px solid #8A8AA8',
+            background: 'white', border: '3px solid #1C1C3A',
             borderRadius: 20, padding: 16,
-            boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 16
+            boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
           }}>
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: '#888' }}>
               FILTER BY INTEREST
@@ -164,9 +164,9 @@ export default function Discover({ profile }) {
                 onClick={() => { setSelectedInterest(''); setShowFilters(false) }}
                 style={{
                   padding: '6px 14px', borderRadius: 50,
-                  border: '2.5px solid #8A8AA8', fontWeight: 700, fontSize: 12,
-                  background: !selectedInterest ? '#FFB0D0' : 'white',
-                  color: !selectedInterest ? 'white' : '#8A8AA8',
+                  border: '2.5px solid #1C1C3A', fontWeight: 700, fontSize: 12,
+                  background: !selectedInterest ? '#FF85B3' : 'white',
+                  color: !selectedInterest ? 'white' : '#1C1C3A',
                   cursor: 'pointer', fontFamily: 'inherit'
                 }}
               >All</button>
@@ -175,9 +175,9 @@ export default function Discover({ profile }) {
                   onClick={() => { setSelectedInterest(x); setShowFilters(false) }}
                   style={{
                     padding: '6px 14px', borderRadius: 50,
-                    border: '2.5px solid #8A8AA8', fontWeight: 700, fontSize: 12,
-                    background: selectedInterest === x ? '#FFB0D0' : '#FFFCFD',
-                    color: selectedInterest === x ? 'white' : '#8A8AA8',
+                    border: '2.5px solid #1C1C3A', fontWeight: 700, fontSize: 12,
+                    background: selectedInterest === x ? '#FF85B3' : '#FFF0F5',
+                    color: selectedInterest === x ? 'white' : '#1C1C3A',
                     cursor: 'pointer', fontFamily: 'inherit'
                   }}
                 >{x}</button>
@@ -200,9 +200,9 @@ export default function Discover({ profile }) {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{
-            background: 'white', border: '3px solid #8A8AA8',
+            background: 'white', border: '3px solid #1C1C3A',
             borderRadius: 20, padding: '40px 20px', textAlign: 'center',
-            boxShadow: '5px 5px 0 #8A8AA8'
+            boxShadow: '5px 5px 0 #1C1C3A'
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>No people in {browseCity} yet</div>
@@ -214,10 +214,10 @@ export default function Discover({ profile }) {
             <button
               onClick={() => { setSearch(''); setSelectedInterest('') }}
               style={{
-                marginTop: 16, background: '#FFB0D0', color: 'white',
-                border: '3px solid #8A8AA8', borderRadius: 50,
+                marginTop: 16, background: '#FF85B3', color: 'white',
+                border: '3px solid #1C1C3A', borderRadius: 50,
                 padding: '10px 24px', fontWeight: 700, cursor: 'pointer',
-                boxShadow: '3px 3px 0 #8A8AA8', fontFamily: 'inherit'
+                boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit'
               }}
             >Clear filters</button>
           </div>
@@ -230,21 +230,21 @@ export default function Discover({ profile }) {
                 <button key={p.id} onClick={() => navigate(`/profile/${p.id}`)}
                   style={{
                     background: BG[i % BG.length],
-                    border: '3px solid #8A8AA8', borderRadius: 20,
+                    border: '3px solid #1C1C3A', borderRadius: 20,
                     padding: 16, textAlign: 'left', cursor: 'pointer',
-                    boxShadow: '5px 5px 0 #8A8AA8', transition: 'all 0.2s'
+                    boxShadow: '5px 5px 0 #1C1C3A', transition: 'all 0.2s'
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #8A8AA8' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #8A8AA8' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #1C1C3A' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #1C1C3A' }}
                 >
                   {/* AVATAR */}
                   <div style={{
                     width: 56, height: 56, borderRadius: 16,
                     background: BORDER[i % BORDER.length],
-                    border: '3px solid #8A8AA8', overflow: 'hidden',
+                    border: '3px solid #1C1C3A', overflow: 'hidden',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: 'white', fontWeight: 900, fontSize: 24,
-                    marginBottom: 10, boxShadow: '2px 2px 0 #8A8AA8',
+                    marginBottom: 10, boxShadow: '2px 2px 0 #1C1C3A',
                     flexShrink: 0
                   }}>
                     {p.avatar_url ? (
@@ -263,7 +263,7 @@ export default function Discover({ profile }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                     <div style={{
                       flex: 1, height: 8, background: '#eee',
-                      borderRadius: 50, border: '1.5px solid #8A8AA8', overflow: 'hidden'
+                      borderRadius: 50, border: '1.5px solid #1C1C3A', overflow: 'hidden'
                     }}>
                       <div style={{ width: `${s}%`, height: '100%', background: '#4CAF82' }} />
                     </div>
@@ -274,14 +274,14 @@ export default function Discover({ profile }) {
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     {c.slice(0,2).map(x => (
                       <span key={x} style={{
-                        background: 'white', border: '2px solid #8A8AA8',
+                        background: 'white', border: '2px solid #1C1C3A',
                         borderRadius: 50, padding: '2px 8px',
                         fontSize: 11, fontWeight: 700
                       }}>{x}</span>
                     ))}
                     {c.length > 2 && (
                       <span style={{
-                        background: '#FFB3CC', border: '2px solid #8A8AA8',
+                        background: '#FFB3CC', border: '2px solid #1C1C3A',
                         borderRadius: 50, padding: '2px 8px',
                         fontSize: 11, fontWeight: 700
                       }}>+{c.length - 2}</span>
@@ -309,10 +309,10 @@ export default function Discover({ profile }) {
               disabled={loadingMore}
               style={{
                 background: loadingMore ? '#eee' : 'white',
-                border: '3px solid #8A8AA8', borderRadius: 50,
+                border: '3px solid #1C1C3A', borderRadius: 50,
                 padding: '12px 28px', fontWeight: 800, fontSize: 14,
                 cursor: loadingMore ? 'wait' : 'pointer',
-                boxShadow: '4px 4px 0 #8A8AA8', fontFamily: 'inherit',
+                boxShadow: '4px 4px 0 #1C1C3A', fontFamily: 'inherit',
               }}
             >
               {loadingMore ? 'Loading...' : 'Load more people'}

@@ -30,15 +30,15 @@ export default function CitySelect({ value, onChange, compact = false, label }) 
           display: 'flex',
           alignItems: 'center',
           gap: 6,
-          border: '2.5px solid #8A8AA8',
+          border: '2.5px solid #1C1C3A',
           borderRadius: 12,
           padding: compact ? '7px 10px' : '8px 12px',
           fontSize: 13,
           fontWeight: 800,
           fontFamily: 'inherit',
           background: 'white',
-          color: '#5A5A78',
-          boxShadow: '2px 2px 0 #8A8AA8',
+          color: '#1C1C3A',
+          boxShadow: '2px 2px 0 #1C1C3A',
           cursor: 'pointer',
           outline: 'none',
           minWidth: compact ? 118 : 140,
@@ -58,9 +58,9 @@ export default function CitySelect({ value, onChange, compact = false, label }) 
             zIndex: 80,
             minWidth: '100%',
             background: 'white',
-            border: '2.5px solid #8A8AA8',
+            border: '2.5px solid #1C1C3A',
             borderRadius: 12,
-            boxShadow: '4px 4px 0 #8A8AA8',
+            boxShadow: '4px 4px 0 #1C1C3A',
             overflow: 'hidden',
           }}
         >
@@ -82,15 +82,16 @@ export default function CitySelect({ value, onChange, compact = false, label }) 
                   textAlign: 'left',
                   padding: '10px 14px',
                   border: 'none',
-                  background: selected ? '#FFD0E4' : 'white',
-                  color: selected ? '#5A5A78' : '#8A8AA8',
+                  /* Only change user asked: soft pink highlight instead of dark navy */
+                  background: selected ? '#FFE0EC' : 'white',
+                  color: '#1C1C3A',
                   fontWeight: 800,
                   fontSize: 13,
                   fontFamily: 'inherit',
                   cursor: 'pointer',
                 }}
                 onMouseEnter={e => {
-                  if (!selected) e.currentTarget.style.background = '#FFF7FA'
+                  if (!selected) e.currentTarget.style.background = '#FFF0F5'
                 }}
                 onMouseLeave={e => {
                   if (!selected) e.currentTarget.style.background = 'white'

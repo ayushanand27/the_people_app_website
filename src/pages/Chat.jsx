@@ -166,7 +166,7 @@ export default function Chat({ profile }) {
 
   // CONVERSATION LIST
   if (!receiverId) return (
-    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
       <Navbar active="chat" profile={profile} />
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
         <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 20 }}>Messages 💬</div>
@@ -177,18 +177,18 @@ export default function Chat({ profile }) {
           <div style={{ textAlign: 'center', padding: 60, color: '#aaa', fontWeight: 700 }}>Loading...</div>
         ) : conversations.length === 0 ? (
           <div style={{
-            background: 'white', border: '3px solid #8A8AA8',
+            background: 'white', border: '3px solid #1C1C3A',
             borderRadius: 20, padding: '40px 20px', textAlign: 'center',
-            boxShadow: '5px 5px 0 #8A8AA8'
+            boxShadow: '5px 5px 0 #1C1C3A'
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>💬</div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>No messages yet</div>
             <div style={{ color: '#aaa', marginTop: 6, marginBottom: 16 }}>Discover people and start chatting!</div>
             <button onClick={() => navigate('/discover')} style={{
-              background: '#FFB0D0', color: 'white',
-              border: '3px solid #8A8AA8', borderRadius: 50,
+              background: '#FF85B3', color: 'white',
+              border: '3px solid #1C1C3A', borderRadius: 50,
               padding: '12px 28px', fontWeight: 900, fontSize: 15,
-              boxShadow: '4px 4px 0 #8A8AA8', cursor: 'pointer'
+              boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer'
             }}>Find People →</button>
           </div>
         ) : (
@@ -197,18 +197,18 @@ export default function Chat({ profile }) {
               <button key={c.id} onClick={() => navigate(`/chat/${c.id}`)}
                 style={{
                   background: BG[i % BG.length],
-                  border: '3px solid #8A8AA8', borderRadius: 20,
+                  border: '3px solid #1C1C3A', borderRadius: 20,
                   padding: 16, display: 'flex', alignItems: 'center', gap: 14,
-                  boxShadow: '5px 5px 0 #8A8AA8', cursor: 'pointer',
+                  boxShadow: '5px 5px 0 #1C1C3A', cursor: 'pointer',
                   transition: 'all 0.2s', textAlign: 'left'
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #8A8AA8' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #8A8AA8' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-2px,-2px)'; e.currentTarget.style.boxShadow = '7px 7px 0 #1C1C3A' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '5px 5px 0 #1C1C3A' }}
               >
                 <div style={{
                   width: 52, height: 52, borderRadius: 16,
                   background: BORDER[i % BORDER.length],
-                  border: '3px solid #8A8AA8',
+                  border: '3px solid #1C1C3A',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: 'white', fontWeight: 900, fontSize: 22, flexShrink: 0
                 }}>{c.full_name?.[0] || '?'}</div>
@@ -226,24 +226,24 @@ export default function Chat({ profile }) {
 
   // CHAT WINDOW
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFCFD', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', display: 'flex', flexDirection: 'column' }}>
 
       {/* HEADER */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'white', borderBottom: '3px solid #8A8AA8',
+        background: 'white', borderBottom: '3px solid #1C1C3A',
         padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12
       }}>
         <button onClick={() => navigate('/chat')} style={{
-          width: 38, height: 38, background: '#FFFCFD',
-          border: '3px solid #8A8AA8', borderRadius: 12,
+          width: 38, height: 38, background: '#FFF0F5',
+          border: '3px solid #1C1C3A', borderRadius: 12,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '2px 2px 0 #8A8AA8', cursor: 'pointer'
+          boxShadow: '2px 2px 0 #1C1C3A', cursor: 'pointer'
         }}><ArrowLeft size={18} /></button>
 
         <div style={{
-          width: 44, height: 44, background: '#FFB0D0',
-          border: '3px solid #8A8AA8', borderRadius: 14,
+          width: 44, height: 44, background: '#FF85B3',
+          border: '3px solid #1C1C3A', borderRadius: 14,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'white', fontWeight: 900, fontSize: 20
         }}>{receiver?.full_name?.[0] || '?'}</div>
@@ -281,11 +281,11 @@ export default function Chat({ profile }) {
             <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start' }}>
               <div style={{
                 maxWidth: '72%', padding: '12px 16px',
-                borderRadius: 20, border: '3px solid #8A8AA8',
+                borderRadius: 20, border: '3px solid #1C1C3A',
                 fontWeight: 600, fontSize: 15,
-                boxShadow: '3px 3px 0 #8A8AA8',
-                background: isMine ? '#FFB0D0' : 'white',
-                color: isMine ? 'white' : '#8A8AA8'
+                boxShadow: '3px 3px 0 #1C1C3A',
+                background: isMine ? '#FF85B3' : 'white',
+                color: isMine ? 'white' : '#1C1C3A'
               }}>{msg.content}</div>
             </div>
           )
@@ -296,7 +296,7 @@ export default function Chat({ profile }) {
       {/* INPUT */}
       <form onSubmit={sendMessage} style={{
         position: 'fixed', bottom: 72, left: 0, right: 0,
-        background: 'white', borderTop: '3px solid #8A8AA8',
+        background: 'white', borderTop: '3px solid #1C1C3A',
         padding: '12px 16px', display: 'flex', gap: 10, zIndex: 40
       }}>
         <input
@@ -305,17 +305,17 @@ export default function Chat({ profile }) {
           value={newMsg}
           onChange={e => setNewMsg(e.target.value)}
           style={{
-            flex: 1, border: '3px solid #8A8AA8', borderRadius: 50,
+            flex: 1, border: '3px solid #1C1C3A', borderRadius: 50,
             padding: '12px 20px', fontSize: 15, fontWeight: 600,
-            background: '#FFFCFD', outline: 'none',
+            background: '#FFF0F5', outline: 'none',
             fontFamily: 'inherit'
           }}
         />
         <button type="submit" disabled={!newMsg.trim()} style={{
-          width: 50, height: 50, background: '#FFB0D0',
-          border: '3px solid #8A8AA8', borderRadius: 16,
+          width: 50, height: 50, background: '#FF85B3',
+          border: '3px solid #1C1C3A', borderRadius: 16,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'white', boxShadow: '3px 3px 0 #8A8AA8',
+          color: 'white', boxShadow: '3px 3px 0 #1C1C3A',
           cursor: 'pointer', opacity: newMsg.trim() ? 1 : 0.4
         }}><Send size={20} /></button>
       </form>

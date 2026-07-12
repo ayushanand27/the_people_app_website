@@ -52,7 +52,7 @@ export default function Groups({ profile }) {
   const filtered = tab === 'joined' ? groups.filter(g => joined.includes(g.id)) : groups
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 100 }}>
       <Navbar active="groups" profile={profile} />
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
@@ -69,10 +69,10 @@ export default function Groups({ profile }) {
           {['all','joined'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '10px 20px', borderRadius: 50,
-              border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 14,
-              background: tab === t ? '#FFB0D0' : 'white',
-              color: tab === t ? 'white' : '#8A8AA8',
-              boxShadow: '3px 3px 0 #8A8AA8', cursor: 'pointer'
+              border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
+              background: tab === t ? '#FF85B3' : 'white',
+              color: tab === t ? 'white' : '#1C1C3A',
+              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer'
             }}>
               {t === 'all' ? '🌍 All Groups' : '✅ Joined'}
             </button>
@@ -83,9 +83,9 @@ export default function Groups({ profile }) {
           <div style={{ textAlign: 'center', padding: 60, color: '#aaa', fontWeight: 700 }}>Loading...</div>
         ) : filtered.length === 0 ? (
           <div style={{
-            background: 'white', border: '3px solid #8A8AA8',
+            background: 'white', border: '3px solid #1C1C3A',
             borderRadius: 20, padding: '40px 20px', textAlign: 'center',
-            boxShadow: '5px 5px 0 #8A8AA8'
+            boxShadow: '5px 5px 0 #1C1C3A'
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🏘️</div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>
@@ -102,8 +102,8 @@ export default function Groups({ profile }) {
               return (
                 <div key={g.id} style={{
                   background: BG[i % BG.length],
-                  border: '3px solid #8A8AA8', borderRadius: 20,
-                  padding: '20px 20px', boxShadow: '5px 5px 0 #8A8AA8'
+                  border: '3px solid #1C1C3A', borderRadius: 20,
+                  padding: '20px 20px', boxShadow: '5px 5px 0 #1C1C3A'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                     <div style={{ flex: 1 }}>
@@ -112,7 +112,7 @@ export default function Groups({ profile }) {
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
                         {g.interests?.map(x => (
                           <span key={x} style={{
-                            background: 'white', border: '2px solid #8A8AA8',
+                            background: 'white', border: '2px solid #1C1C3A',
                             borderRadius: 50, padding: '3px 10px', fontSize: 12, fontWeight: 700
                           }}>{x}</span>
                         ))}
@@ -127,10 +127,10 @@ export default function Groups({ profile }) {
                       disabled={!isJoined && isFull}
                       style={{
                         padding: '10px 18px', borderRadius: 14,
-                        border: '3px solid #8A8AA8', fontWeight: 900, fontSize: 14,
+                        border: '3px solid #1C1C3A', fontWeight: 900, fontSize: 14,
                         background: isJoined ? '#FFB3CC' : isFull ? '#eee' : '#B8F0B8',
                         color: isJoined ? '#CC0044' : isFull ? '#aaa' : '#1C6B3A',
-                        boxShadow: '3px 3px 0 #8A8AA8', cursor: 'pointer',
+                        boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer',
                         flexShrink: 0, opacity: (!isJoined && isFull) ? 0.5 : 1
                       }}
                     >

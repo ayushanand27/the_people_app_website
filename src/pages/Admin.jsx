@@ -182,9 +182,9 @@ export default function Admin({ profile }) {
   }
 
   const inputStyle = {
-    width: '100%', border: '3px solid #8A8AA8', borderRadius: 16,
+    width: '100%', border: '3px solid #1C1C3A', borderRadius: 16,
     padding: '12px 16px', fontSize: 14, fontWeight: 600,
-    background: '#FFFCFD', outline: 'none',
+    background: '#FFF0F5', outline: 'none',
     fontFamily: 'inherit', boxSizing: 'border-box'
   }
 
@@ -192,23 +192,23 @@ export default function Admin({ profile }) {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FFFCFD' }}>
-        <div style={{ fontWeight: 900, color: '#FFB0D0' }}>Loading admin panel...</div>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FFF0F5' }}>
+        <div style={{ fontWeight: 900, color: '#FF85B3' }}>Loading admin panel...</div>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFCFD', paddingBottom: 40 }}>
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', paddingBottom: 40 }}>
 
       {/* TOP BAR */}
       <div style={{
-        background: '#8A8AA8', borderBottom: '3px solid #8A8AA8',
+        background: '#1C1C3A', borderBottom: '3px solid #1C1C3A',
         padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
-            width: 36, height: 36, background: '#FFB0D0',
+            width: 36, height: 36, background: '#FF85B3',
             border: '2.5px solid white', borderRadius: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'white', fontWeight: 900, fontSize: 16
@@ -219,7 +219,7 @@ export default function Admin({ profile }) {
           </div>
         </div>
         <button onClick={() => navigate('/dashboard')} style={{
-          background: '#FFB0D0', color: 'white',
+          background: '#FF85B3', color: 'white',
           border: '2.5px solid white', borderRadius: 50,
           padding: '8px 18px', fontWeight: 700, fontSize: 13,
           cursor: 'pointer', fontFamily: 'inherit'
@@ -237,9 +237,9 @@ export default function Admin({ profile }) {
             { label: 'Pending Reports', value: pendingReports, bg: '#FFD699', icon: '🛡️' },
           ].map(s => (
             <div key={s.label} style={{
-              background: s.bg, border: '3px solid #8A8AA8',
+              background: s.bg, border: '3px solid #1C1C3A',
               borderRadius: 20, padding: '20px 16px', textAlign: 'center',
-              boxShadow: '4px 4px 0 #8A8AA8'
+              boxShadow: '4px 4px 0 #1C1C3A'
             }}>
               <div style={{ fontSize: 32, marginBottom: 6 }}>{s.icon}</div>
               <div style={{ fontWeight: 900, fontSize: 28 }}>{s.value}</div>
@@ -253,10 +253,10 @@ export default function Admin({ profile }) {
           {['groups','events','listings','users','reports'].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '10px 20px', borderRadius: 50,
-              border: '3px solid #8A8AA8', fontWeight: 700, fontSize: 14,
-              background: tab === t ? '#FFB0D0' : 'white',
-              color: tab === t ? 'white' : '#8A8AA8',
-              boxShadow: '3px 3px 0 #8A8AA8', cursor: 'pointer',
+              border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
+              background: tab === t ? '#FF85B3' : 'white',
+              color: tab === t ? 'white' : '#1C1C3A',
+              boxShadow: '3px 3px 0 #1C1C3A', cursor: 'pointer',
               fontFamily: 'inherit', textTransform: 'capitalize'
             }}>{
               t === 'groups' ? '🏘️ Groups'
@@ -289,9 +289,9 @@ export default function Admin({ profile }) {
           <div>
             {/* CREATE GROUP FORM */}
             <div style={{
-              background: 'white', border: '3px solid #8A8AA8',
+              background: 'white', border: '3px solid #1C1C3A',
               borderRadius: 20, padding: 24,
-              boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 20
+              boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 20
             }}>
               <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 16 }}>
                 Create New Group ➕
@@ -329,9 +329,9 @@ export default function Admin({ profile }) {
                   {INTERESTS.map(x => (
                     <button key={x} onClick={() => toggleGInterest(x)} style={{
                       padding: '6px 12px', borderRadius: 50,
-                      border: '2.5px solid #8A8AA8', fontWeight: 700, fontSize: 12,
-                      background: gInterests.includes(x) ? '#FFB0D0' : '#FFFCFD',
-                      color: gInterests.includes(x) ? 'white' : '#8A8AA8',
+                      border: '2.5px solid #1C1C3A', fontWeight: 700, fontSize: 12,
+                      background: gInterests.includes(x) ? '#FF85B3' : '#FFF0F5',
+                      color: gInterests.includes(x) ? 'white' : '#1C1C3A',
                       cursor: 'pointer', fontFamily: 'inherit'
                     }}>{x}</button>
                   ))}
@@ -339,9 +339,9 @@ export default function Admin({ profile }) {
               </div>
               <button onClick={createGroup} style={{
                 background: '#4CAF82', color: 'white',
-                border: '3px solid #8A8AA8', borderRadius: 50,
+                border: '3px solid #1C1C3A', borderRadius: 50,
                 padding: '12px 28px', fontWeight: 900, fontSize: 15,
-                boxShadow: '4px 4px 0 #8A8AA8', cursor: 'pointer',
+                boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
                 fontFamily: 'inherit'
               }}>Create Group ✓</button>
             </div>
@@ -353,9 +353,9 @@ export default function Admin({ profile }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {groups.map(g => (
                 <div key={g.id} style={{
-                  background: '#B8F0B8', border: '3px solid #8A8AA8',
+                  background: '#B8F0B8', border: '3px solid #1C1C3A',
                   borderRadius: 16, padding: '14px 18px',
-                  boxShadow: '3px 3px 0 #8A8AA8',
+                  boxShadow: '3px 3px 0 #1C1C3A',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}>
                   <div>
@@ -382,9 +382,9 @@ export default function Admin({ profile }) {
           <div>
             {/* CREATE EVENT FORM */}
             <div style={{
-              background: 'white', border: '3px solid #8A8AA8',
+              background: 'white', border: '3px solid #1C1C3A',
               borderRadius: 20, padding: 24,
-              boxShadow: '5px 5px 0 #8A8AA8', marginBottom: 20
+              boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 20
             }}>
               <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 16 }}>
                 Create New Event ➕
@@ -431,9 +431,9 @@ export default function Admin({ profile }) {
               </div>
               <button onClick={createEvent} disabled={eventSaving} style={{
                 background: '#4CAF82', color: 'white',
-                border: '3px solid #8A8AA8', borderRadius: 50,
+                border: '3px solid #1C1C3A', borderRadius: 50,
                 padding: '12px 28px', fontWeight: 900, fontSize: 15,
-                boxShadow: '4px 4px 0 #8A8AA8',
+                boxShadow: '4px 4px 0 #1C1C3A',
                 fontFamily: 'inherit',
                 opacity: eventSaving ? 0.65 : 1,
                 cursor: eventSaving ? 'not-allowed' : 'pointer',
@@ -447,9 +447,9 @@ export default function Admin({ profile }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {events.map(ev => (
                 <div key={ev.id} style={{
-                  background: '#B3E5FC', border: '3px solid #8A8AA8',
+                  background: '#B3E5FC', border: '3px solid #1C1C3A',
                   borderRadius: 16, padding: '14px 18px',
-                  boxShadow: '3px 3px 0 #8A8AA8',
+                  boxShadow: '3px 3px 0 #1C1C3A',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}>
                   <div>
@@ -481,15 +481,15 @@ export default function Admin({ profile }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {users.map((u, i) => (
                 <div key={u.id} style={{
-                  background: 'white', border: '3px solid #8A8AA8',
+                  background: 'white', border: '3px solid #1C1C3A',
                   borderRadius: 16, padding: '14px 18px',
-                  boxShadow: '3px 3px 0 #8A8AA8',
+                  boxShadow: '3px 3px 0 #1C1C3A',
                   display: 'flex', alignItems: 'center', gap: 14
                 }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 14,
                     background: ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699'][i % 4],
-                    border: '2.5px solid #8A8AA8',
+                    border: '2.5px solid #1C1C3A',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 900, fontSize: 18, flexShrink: 0
                   }}>{u.full_name?.[0] || '?'}</div>
@@ -512,9 +512,9 @@ export default function Admin({ profile }) {
                 style={{
                   marginTop: 16, width: '100%', padding: '12px 20px',
                   background: usersLoadingMore ? '#eee' : 'white',
-                  border: '3px solid #8A8AA8', borderRadius: 50,
+                  border: '3px solid #1C1C3A', borderRadius: 50,
                   fontWeight: 700, fontSize: 14, cursor: usersLoadingMore ? 'wait' : 'pointer',
-                  boxShadow: '3px 3px 0 #8A8AA8', fontFamily: 'inherit',
+                  boxShadow: '3px 3px 0 #1C1C3A', fontFamily: 'inherit',
                 }}
               >
                 {usersLoadingMore ? 'Loading...' : 'Load more users'}

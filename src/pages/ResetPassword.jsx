@@ -4,10 +4,10 @@ import { supabase } from '../lib/supabase'
 import { clearPasswordResetPending, isPasswordResetPending } from '../lib/authRecovery'
 
 const inputStyle = {
-  width: '100%', border: '3px solid #8A8AA8',
+  width: '100%', border: '3px solid #1C1C3A',
   borderRadius: 50, padding: '14px 20px',
   fontSize: 15, fontWeight: 600,
-  background: '#FFFCFD', outline: 'none',
+  background: '#FFF0F5', outline: 'none',
   fontFamily: 'inherit', boxSizing: 'border-box',
 }
 
@@ -126,25 +126,25 @@ export default function ResetPassword() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#FFFCFD',
+      minHeight: '100vh', background: '#FFF0F5',
       display: 'flex', alignItems: 'center',
       justifyContent: 'center', padding: 20,
     }}>
       <div style={{ width: '100%', maxWidth: 440 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
-            width: 80, height: 80, background: '#FFB0D0',
-            border: '4px solid #8A8AA8', borderRadius: 24,
+            width: 80, height: 80, background: '#FF85B3',
+            border: '4px solid #1C1C3A', borderRadius: 24,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'white', fontWeight: 900, fontSize: 36,
-            boxShadow: '6px 6px 0 #8A8AA8', margin: '0 auto 16px',
+            boxShadow: '6px 6px 0 #1C1C3A', margin: '0 auto 16px',
           }}>P</div>
-          <div style={{ fontWeight: 900, fontSize: 32, color: '#5A5A78' }}>The People App</div>
+          <div style={{ fontWeight: 900, fontSize: 32, color: '#1C1C3A' }}>The People App</div>
         </div>
 
         <div style={{
-          background: 'white', border: '4px solid #8A8AA8',
-          borderRadius: 28, padding: 32, boxShadow: '8px 8px 0 #8A8AA8',
+          background: 'white', border: '4px solid #1C1C3A',
+          borderRadius: 28, padding: 32, boxShadow: '8px 8px 0 #1C1C3A',
         }}>
           <div style={{ fontWeight: 900, fontSize: 22, textAlign: 'center', marginBottom: 24 }}>
             {phase === 'success' ? 'All done! ✅' : 'Set new password 🔒'}
@@ -182,10 +182,10 @@ export default function ResetPassword() {
               />
               <button type="submit" disabled={submitting} style={{
                 width: '100%', background: '#4CAF82', color: 'white',
-                border: '3px solid #8A8AA8', borderRadius: 50,
+                border: '3px solid #1C1C3A', borderRadius: 50,
                 padding: '16px 20px', fontWeight: 900, fontSize: 17,
                 cursor: 'pointer', fontFamily: 'inherit',
-                boxShadow: '5px 5px 0 #8A8AA8', opacity: submitting ? 0.6 : 1,
+                boxShadow: '5px 5px 0 #1C1C3A', opacity: submitting ? 0.6 : 1,
               }}>
                 {submitting ? 'Saving...' : 'Update password →'}
               </button>
@@ -213,7 +213,7 @@ export default function ResetPassword() {
           )}
 
           <div style={{ textAlign: 'center', marginTop: 16, fontSize: 14, color: '#888', fontWeight: 600 }}>
-            <Link to="/auth" style={{ color: '#FFB0D0', fontWeight: 900, textDecoration: 'none' }}>
+            <Link to="/auth" style={{ color: '#FF85B3', fontWeight: 900, textDecoration: 'none' }}>
               ← Back to login
             </Link>
           </div>
