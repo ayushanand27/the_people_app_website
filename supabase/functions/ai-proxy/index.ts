@@ -164,6 +164,51 @@ async function callOpenAIModerateImage(
   };
 }
 
+const IMAGE_MOD_SYSTEM = `You are a safety moderator for a social messaging app.
+Look at the image. Flag if it clearly shows: nudity, sexual content, pornography, graphic violence, or hate symbols.
+Respond with JSON only: {"flagged": boolean, "reason": string}
+Normal selfies, food, scenery, memes, and clothes-on photos are fine — flagged false with empty reason.`;
+
+/** Free-tier path: Groq Llama 4 Scout vision */
+async function callGroqModerateImage(
+  imageUrl: string,
+  apiKey: string,
+): Promise<{ flagged: boolean; reason: string } | null> {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      messages: [
+        { role: "system", content: IMAGE_MOD_SYSTEM },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Moderate this chat image for safety." },
+            { type: "image_url", image_url: { url: imageUrl } },
+          ],
+        },
+      ],
+      max_tokens: 80,
+      temperature: 0,
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  const raw = data.choices?.[0]?.message?.content?.trim();
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return { flagged: Boolean(parsed.flagged), reason: String(parsed.reason || "") };
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -222,7 +267,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "imageUrl must be https" }, 400);
     }
 
-    if (!openaiKey) {
+    if (!openaiKey && !groqKey) {
       return jsonResponse({
         flagged: true,
         reason: "Image safety check unavailable",
@@ -230,7 +275,19 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const result = await callOpenAIModerateImage(url, openaiKey);
+    // Prefer free Groq vision; fall back to OpenAI moderation if present
+    let result: { flagged: boolean; reason: string } | null = null;
+    let source = "error";
+
+    if (groqKey) {
+      result = await callGroqModerateImage(url, groqKey);
+      if (result) source = "groq";
+    }
+    if (!result && openaiKey) {
+      result = await callOpenAIModerateImage(url, openaiKey);
+      if (result) source = "openai";
+    }
+
     if (!result) {
       return jsonResponse({
         flagged: true,
@@ -238,7 +295,7 @@ Deno.serve(async (req: Request) => {
         source: "error",
       });
     }
-    return jsonResponse({ flagged: result.flagged, reason: result.reason, source: "openai" });
+    return jsonResponse({ flagged: result.flagged, reason: result.reason, source });
   }
 
   if (!context || typeof context !== "string" || !context.trim()) {
