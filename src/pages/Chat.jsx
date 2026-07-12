@@ -7,7 +7,7 @@ import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 import { checkChatText } from '../lib/chatSafety'
 import { moderateChatText, moderateChatImage } from '../lib/ai'
-import { reportContent, blockUser, getBlockedIds } from '../lib/social'
+import { reportContent, blockUser, getBlockedIds, createNotification } from '../lib/social'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -212,7 +212,7 @@ export default function Chat({ profile }) {
 
   async function handleReport() {
     if (!receiverId || safetyBusy) return
-    const reason = window.prompt('Why are you reporting this user? (optional)') ?? ''
+    const reason = window.prompt('Why are you reporting this user? (optional)')
     if (reason === null) return
     setSafetyBusy(true)
     const ok = await reportContent({
@@ -294,6 +294,12 @@ export default function Chat({ profile }) {
       setNewMsg('')
       clearPendingImage()
       if (data) setMessages(prev => (prev.some(m => m.id === data.id) ? prev : [...prev, data]))
+      createNotification({
+        userId: receiverId,
+        actorId: profile.id,
+        type: 'message',
+        entityId: data?.id || null,
+      })
       fetchConversations()
     } catch (err) {
       if (imagePath) await deleteUploadedImage(imagePath)
@@ -375,10 +381,11 @@ export default function Chat({ profile }) {
 
   // CHAT WINDOW
   return (
-    <div style={{ minHeight: '100vh', background: '#FFF0F5', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#FFF0F5', display: 'flex', flexDirection: 'column', paddingBottom: 72 }}>
+      <Navbar active="chat" profile={profile} />
 
       <div style={{
-        position: 'sticky', top: 0, zIndex: 50,
+        position: 'sticky', top: 0, zIndex: 40,
         background: 'white', borderBottom: '3px solid #1C1C3A',
         padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12
       }}>

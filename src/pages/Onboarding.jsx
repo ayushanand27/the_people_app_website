@@ -41,16 +41,33 @@ export default function Onboarding({ profile, setProfile }) {
     }
     setLoading(true)
     setError('')
+    const cleanUsername = username
+      .toLowerCase()
+      .replace(/^[@#]+/, '')
+      .replace(/[^a-z0-9_]/g, '')
+      .slice(0, 24)
+    if (cleanUsername.length < 3) {
+      setError('Username must be at least 3 characters (letters, numbers, underscore)')
+      setLoading(false)
+      return
+    }
     const { data: { user } } = await supabase.auth.getUser()
     const { data, error: err } = await supabase.from('profiles')
       .update({
         full_name: fullName,
-        username: username.toLowerCase().replace(/\s/g, ''),
+        username: cleanUsername,
         bio, city: finalCity, interests,
         onboarding_complete: true
       })
       .eq('id', user.id).select().single()
-    if (err) { setError(err.message); setLoading(false); return }
+    if (err) {
+      const msg = /duplicate|unique/i.test(err.message)
+        ? 'That username is taken. Try another.'
+        : err.message
+      setError(msg)
+      setLoading(false)
+      return
+    }
     setProfile(data)
     track('onboarding_complete', { user_id: user.id })
     navigate('/dashboard')

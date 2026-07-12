@@ -9,6 +9,7 @@ import {
   categoryLabel,
   fetchVerifiedListings,
 } from '../lib/localListings'
+import InlineError from '../components/InlineError'
 
 const BG = ['#FFB3CC', '#B8F0B8', '#B3E5FC', '#FFD699', '#E8D5FF', '#FFE566']
 
@@ -19,9 +20,11 @@ export default function Local({ profile }) {
   const [search, setSearch] = useState('')
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     try {
       const data = await fetchVerifiedListings({
         city: browseCity,
@@ -29,8 +32,9 @@ export default function Local({ profile }) {
         search,
       })
       setListings(data)
-    } catch {
+    } catch (err) {
       setListings([])
+      setLoadError(err?.message || 'Failed to load listings')
     } finally {
       setLoading(false)
     }
@@ -55,6 +59,8 @@ export default function Local({ profile }) {
             Verified shops, hotels, services in {browseCity}
           </div>
         </div>
+
+        <InlineError message={loadError} onRetry={load} />
 
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,

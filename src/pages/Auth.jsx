@@ -10,13 +10,32 @@ export default function Auth() {
   const [loading,  setLoading]  = useState(false)
   const [message,  setMessage]  = useState('')
 
+  function friendlyAuthError(raw) {
+    const msg = String(raw || '')
+    if (/error sending|unexpected_failure|smtp|rate.?limit/i.test(msg)) {
+      return 'Email could not be sent right now. Try again in a few minutes, or use Google sign-in.'
+    }
+    if (/invalid login|invalid credentials/i.test(msg)) return 'Wrong email or password.'
+    if (/already registered|already been registered/i.test(msg)) return 'That email is already registered. Try logging in.'
+    if (/password/i.test(msg) && /weak|least|characters/i.test(msg)) return 'Password is too weak. Use at least 6 characters.'
+    return 'Something went wrong. Please try again.'
+  }
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const oauthError = params.get('error_description')
     if (oauthError) {
       setMessage(decodeURIComponent(oauthError.replace(/\+/g, ' ')))
       window.history.replaceState({}, '', '/auth')
+      return
     }
+    try {
+      const stored = sessionStorage.getItem('oauth_error')
+      if (stored) {
+        setMessage(stored)
+        sessionStorage.removeItem('oauth_error')
+      }
+    } catch { /* ignore */ }
   }, [])
 
   async function handleEmail(e) {
@@ -26,10 +45,10 @@ export default function Auth() {
 
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setMessage(error.message)
+      if (error) setMessage(friendlyAuthError(error.message))
     } else if (mode === 'signup') {
       const { data, error } = await supabase.auth.signUp({ email, password })
-      if (error) setMessage(error.message)
+      if (error) setMessage(friendlyAuthError(error.message))
       else {
         if (data.user?.id) track('signup', { user_id: data.user.id })
         setMessage('Check your email to confirm your account!')

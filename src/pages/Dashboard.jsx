@@ -41,22 +41,22 @@ export default function Dashboard({ profile }) {
       ),
     ])
 
-    const firstError = matchesRes.error || groupsRes.error || eventsRes.error || localRes.error
-    if (firstError) {
-      const msg = reportSupabaseError(firstError, 'Dashboard') || 'Failed to load dashboard'
-      setLoadError(msg)
-      setMatches([])
-      setGroups([])
-      setEvents([])
-      setLocalPreview([])
-      setLoading(false)
-      return
-    }
+    const errors = [
+      matchesRes.error && reportSupabaseError(matchesRes.error, 'Dashboard matches'),
+      groupsRes.error && reportSupabaseError(groupsRes.error, 'Dashboard groups'),
+      eventsRes.error && reportSupabaseError(eventsRes.error, 'Dashboard events'),
+      localRes.error && reportSupabaseError(localRes.error, 'Dashboard local'),
+    ].filter(Boolean)
 
-    setMatches(sortByCityThenMatch(matchesRes.data || [], profile.interests, city).slice(0, 6))
-    setGroups(groupsRes.data || [])
-    setEvents(eventsRes.data || [])
-    setLocalPreview(localRes.data || [])
+    setLoadError(errors[0] || '')
+    setMatches(
+      matchesRes.error
+        ? []
+        : sortByCityThenMatch(matchesRes.data || [], profile.interests, city).slice(0, 6),
+    )
+    setGroups(groupsRes.error ? [] : (groupsRes.data || []))
+    setEvents(eventsRes.error ? [] : (eventsRes.data || []))
+    setLocalPreview(localRes.error ? [] : (localRes.data || []))
     setLoading(false)
   }
 

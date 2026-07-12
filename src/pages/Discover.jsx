@@ -58,6 +58,7 @@ export default function Discover({ profile }) {
       .select('id,full_name,username,city,interests,avatar_url,bio')
       .neq('id', profile.id)
       .eq('onboarding_complete', true)
+      .order('created_at', { ascending: false })
     const { data, error } = await query.range(from, to)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Discover') || 'Failed to load people')

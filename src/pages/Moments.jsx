@@ -286,7 +286,10 @@ export default function Moments({ profile }) {
       const data = await uploadToCloudinary(file, signedParams, setProgress)
       const hashtags = extractHashtags(`${title} ${desc}`)
       const moderationText = `${title} ${desc} ${hashtags.join(' ')}`.trim()
-      await moderateUploadText(moderationText)
+      const moderation = await moderateUploadText(moderationText)
+      if (moderation.flagged) {
+        throw new Error(moderation.reason || 'This Moment was blocked for safety. Please revise the text.')
+      }
       // DB trigger always forces pending_review until an admin publishes
       const videoStatus = 'pending_review'
 
@@ -324,11 +327,19 @@ export default function Moments({ profile }) {
     const isLiked = liked.includes(videoId)
     const video = videos.find(v => v.id === videoId)
     if (isLiked) {
-      await supabase.from('video_likes').delete().eq('video_id', videoId).eq('user_id', profile.id)
+      const { error } = await supabase.from('video_likes').delete().eq('video_id', videoId).eq('user_id', profile.id)
+      if (error) {
+        setLoadError(reportSupabaseError(error, 'Unlike') || 'Could not update like')
+        return
+      }
       setLiked(prev => prev.filter(id => id !== videoId))
       setVideos(prev => prev.map(v => (v.id === videoId ? { ...v, likes: Math.max((v.likes || 1) - 1, 0) } : v)))
     } else {
-      await supabase.from('video_likes').insert({ video_id: videoId, user_id: profile.id })
+      const { error } = await supabase.from('video_likes').insert({ video_id: videoId, user_id: profile.id })
+      if (error) {
+        setLoadError(reportSupabaseError(error, 'Like') || 'Could not like Moment')
+        return
+      }
       setLiked(prev => [...prev, videoId])
       setVideos(prev => prev.map(v => (v.id === videoId ? { ...v, likes: (v.likes || 0) + 1 } : v)))
       if (video && video.user_id !== profile.id) {
@@ -416,10 +427,16 @@ export default function Moments({ profile }) {
       if (video && video.user_id !== profile.id) {
         createNotification({ userId: video.user_id, actorId: profile.id, type: 'comment', entityId: commentsOpen })
       }
+    } else if (error) {
+      setLoadError(reportSupabaseError(error, 'Comment') || 'Could not post comment')
     }
   }
 
   function shareVideo(video) {
+    if (video.status && video.status !== 'published') {
+      alert('This Moment is still under review — sharing unlocks after it goes live.')
+      return
+    }
     const url = `${window.location.origin}/moments?v=${video.id}`
     navigator.clipboard?.writeText(url)
     alert('Link copied!')
@@ -544,6 +561,17 @@ export default function Moments({ profile }) {
                   position: 'absolute', inset: 0, pointerEvents: 'none',
                   background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 45%, transparent 80%, rgba(0,0,0,0.3) 100%)',
                 }} />
+
+                {video.status && video.status !== 'published' && (
+                  <div style={{
+                    position: 'absolute', top: 72, left: 16, zIndex: 5,
+                    background: '#FFD699', color: '#1C1C3A',
+                    border: '2px solid #1C1C3A', borderRadius: 50,
+                    padding: '6px 12px', fontWeight: 900, fontSize: 12,
+                  }}>
+                    Under review
+                  </div>
+                )}
 
                 {/* ACTIONS */}
                 <div style={{

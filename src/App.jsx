@@ -53,6 +53,7 @@ function MainApp() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [oauthExchanging, setOauthExchanging] = useState(false)
+  const [profileError, setProfileError] = useState('')
 
   useEffect(() => {
     async function handleOAuthReturn() {
@@ -65,6 +66,14 @@ function MainApp() {
       clearGoogleOAuthPending()
       if (!error) {
         window.history.replaceState({}, '', window.location.pathname || '/')
+      } else {
+        try {
+          sessionStorage.setItem(
+            'oauth_error',
+            error.message || 'Google sign-in failed. Please try again.',
+          )
+        } catch { /* ignore */ }
+        window.history.replaceState({}, '', '/auth')
       }
       setOauthExchanging(false)
     }
@@ -73,11 +82,18 @@ function MainApp() {
   }, [])
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
+    setProfileError('')
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
+
+    if (error && error.code !== 'PGRST116') {
+      setProfileError(error.message || 'Could not load your profile. Please retry.')
+      setLoading(false)
+      return
+    }
 
     if (data?.is_banned) {
       await supabase.auth.signOut()
@@ -98,6 +114,7 @@ function MainApp() {
       if (s) fetchProfile(s.user.id)
       else {
         setProfile(null)
+        setProfileError('')
         setLoading(false)
       }
     }
@@ -113,6 +130,37 @@ function MainApp() {
 
   if (shouldBlockAppForPasswordReset(session)) {
     return <Navigate to="/reset-password" replace />
+  }
+
+  if (session && profileError) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#FFF0F5',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+      }}>
+        <div style={{
+          maxWidth: 420, background: 'white', border: '3px solid #1C1C3A',
+          borderRadius: 20, padding: 24, boxShadow: '6px 6px 0 #1C1C3A', textAlign: 'center',
+        }}>
+          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>Couldn’t load profile</div>
+          <div style={{ color: '#666', fontSize: 14, marginBottom: 16 }}>{profileError}</div>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true)
+              fetchProfile(session.user.id)
+            }}
+            style={{
+              background: '#FF85B3', color: 'white', border: '3px solid #1C1C3A',
+              borderRadius: 50, padding: '12px 24px', fontWeight: 900, cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const needsOnboarding = Boolean(session && (!profile || !profile.onboarding_complete))

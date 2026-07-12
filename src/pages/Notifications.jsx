@@ -64,7 +64,7 @@ export default function Notifications({ profile }) {
           }}>
             <Bell size={48} color="#ddd" style={{ margin: '0 auto 16px' }} />
             <div style={{ fontWeight: 900, fontSize: 18 }}>No notifications yet</div>
-            <div style={{ color: '#aaa', marginTop: 6 }}>Likes, comments, and follows will show up here</div>
+            <div style={{ color: '#aaa', marginTop: 6 }}>Likes, comments, follows, and messages show up here</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -72,13 +72,20 @@ export default function Settings({ profile, setProfile }) {
       .from('avatars')
       .getPublicUrl(filePath)
 
-    setAvatarUrl(publicUrl)
+    const cacheBusted = `${publicUrl}?t=${Date.now()}`
+    setAvatarUrl(cacheBusted)
 
-    // Save to profile
-    await supabase.from('profiles')
-      .update({ avatar_url: publicUrl })
+    const { error: saveErr } = await supabase.from('profiles')
+      .update({ avatar_url: cacheBusted })
       .eq('id', user.id)
 
+    if (saveErr) {
+      setError('Photo uploaded but profile save failed: ' + saveErr.message)
+      setUploading(false)
+      return
+    }
+
+    setProfile?.(prev => (prev ? { ...prev, avatar_url: cacheBusted } : prev))
     setUploading(false)
   }
 

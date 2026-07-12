@@ -47,6 +47,11 @@ export default function Events({ profile }) {
       return
     }
     setRsvpd(prev => [...prev, id])
+    setEvents(prev => prev.map(e => {
+      if (e.id !== id) return e
+      const count = e.event_attendees?.[0]?.count ?? 0
+      return { ...e, event_attendees: [{ count: count + 1 }] }
+    }))
   }
 
   async function cancel(id) {
@@ -56,6 +61,11 @@ export default function Events({ profile }) {
       return
     }
     setRsvpd(prev => prev.filter(x => x !== id))
+    setEvents(prev => prev.map(e => {
+      if (e.id !== id) return e
+      const count = e.event_attendees?.[0]?.count ?? 1
+      return { ...e, event_attendees: [{ count: Math.max(count - 1, 0) }] }
+    }))
   }
 
   return (

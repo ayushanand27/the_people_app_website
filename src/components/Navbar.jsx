@@ -159,10 +159,7 @@ export default function Navbar({ active, profile }) {
           return (
             <button
               key={tab.id}
-              onClick={() => {
-                if (tab.id === 'chat') setUnread(0)
-                navigate(tab.path)
-              }}
+              onClick={() => navigate(tab.path)}
               style={{
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', gap: 4,

@@ -46,6 +46,11 @@ export default function Groups({ profile }) {
       return
     }
     setJoined(prev => [...prev, id])
+    setGroups(prev => prev.map(g => {
+      if (g.id !== id) return g
+      const count = g.group_members?.[0]?.count ?? 0
+      return { ...g, group_members: [{ count: count + 1 }] }
+    }))
   }
 
   async function leaveGroup(id) {
@@ -55,6 +60,11 @@ export default function Groups({ profile }) {
       return
     }
     setJoined(prev => prev.filter(x => x !== id))
+    setGroups(prev => prev.map(g => {
+      if (g.id !== id) return g
+      const count = g.group_members?.[0]?.count ?? 1
+      return { ...g, group_members: [{ count: Math.max(count - 1, 0) }] }
+    }))
   }
 
   const filtered = tab === 'joined' ? groups.filter(g => joined.includes(g.id)) : groups
