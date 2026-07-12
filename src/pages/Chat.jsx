@@ -2,9 +2,12 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import { Send, ArrowLeft, ImagePlus, X } from 'lucide-react'
+import { Send, ArrowLeft, ImagePlus, X, Flag, Ban } from 'lucide-react'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
+import { checkChatText } from '../lib/chatSafety'
+import { moderateChatText, moderateChatImage } from '../lib/ai'
+import { reportContent, blockUser } from '../lib/social'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
@@ -29,6 +32,7 @@ export default function Chat({ profile }) {
   const [loadError,     setLoadError]     = useState('')
   const [hasOlder,      setHasOlder]      = useState(false)
   const [loadingOlder,  setLoadingOlder]  = useState(false)
+  const [safetyBusy,    setSafetyBusy]    = useState(false)
 
   useEffect(() => { if (profile) fetchConversations() }, [profile])
   useEffect(() => {
@@ -185,7 +189,42 @@ export default function Chat({ profile }) {
     })
     if (error) throw error
     const { data } = supabase.storage.from('chat-images').getPublicUrl(path)
-    return data.publicUrl
+    return { publicUrl: data.publicUrl, path }
+  }
+
+  async function deleteUploadedImage(path) {
+    if (!path) return
+    await supabase.storage.from('chat-images').remove([path])
+  }
+
+  async function handleReport() {
+    if (!receiverId || safetyBusy) return
+    const reason = window.prompt('Why are you reporting this user? (optional)') ?? ''
+    if (reason === null) return
+    setSafetyBusy(true)
+    const ok = await reportContent({
+      reporterId: profile.id,
+      targetType: 'user',
+      targetId: receiverId,
+      reason: reason || 'Reported from chat',
+    })
+    setSafetyBusy(false)
+    alert(ok ? 'Reported. Our team will review.' : 'Could not submit report.')
+  }
+
+  async function handleBlock() {
+    if (!receiverId || safetyBusy) return
+    if (!window.confirm(`Block ${receiver?.full_name || 'this user'}? They won't be able to message you.`)) return
+    setSafetyBusy(true)
+    const ok = await blockUser(profile.id, receiverId)
+    setSafetyBusy(false)
+    if (ok) {
+      alert('User blocked.')
+      navigate('/chat')
+      fetchConversations()
+    } else {
+      alert('Could not block user.')
+    }
   }
 
   async function sendMessage(e) {
@@ -193,13 +232,45 @@ export default function Chat({ profile }) {
     const content = newMsg.trim()
     if (!content && !pendingImage) return
 
+    // 1) Local text filter
+    if (content) {
+      const local = checkChatText(content)
+      if (!local.ok) {
+        setLoadError(local.reason)
+        return
+      }
+    }
+
     setUploading(true)
     setLoadError('')
     let imageUrl = null
+    let imagePath = null
+
     try {
-      if (pendingImage?.file) {
-        imageUrl = await uploadChatImage(pendingImage.file)
+      // 2) AI text moderation (fail open if AI down — local filter already ran)
+      if (content) {
+        const ai = await moderateChatText(content)
+        if (ai.flagged) {
+          setLoadError(ai.reason || 'This message was blocked for safety.')
+          setUploading(false)
+          return
+        }
       }
+
+      // 3) Upload + image moderation (fail closed)
+      if (pendingImage?.file) {
+        const uploaded = await uploadChatImage(pendingImage.file)
+        imageUrl = uploaded.publicUrl
+        imagePath = uploaded.path
+        const imgMod = await moderateChatImage(imageUrl)
+        if (imgMod.flagged) {
+          await deleteUploadedImage(imagePath)
+          setLoadError(imgMod.reason || 'This image was blocked for safety.')
+          setUploading(false)
+          return
+        }
+      }
+
       const { data, error } = await supabase.from('messages').insert({
         sender_id: profile.id,
         receiver_id: receiverId,
@@ -212,7 +283,13 @@ export default function Chat({ profile }) {
       if (data) setMessages(prev => (prev.some(m => m.id === data.id) ? prev : [...prev, data]))
       fetchConversations()
     } catch (err) {
-      setLoadError(reportSupabaseError(err, 'Send message') || err.message || 'Could not send message')
+      if (imagePath) await deleteUploadedImage(imagePath)
+      const msg = err?.message || ''
+      if (/Rate limit: max 10 new/i.test(msg)) {
+        setLoadError('Slow down — you can only start 10 new chats per hour.')
+      } else {
+        setLoadError(reportSupabaseError(err, 'Send message') || msg || 'Could not send message')
+      }
     } finally {
       setUploading(false)
     }
@@ -225,7 +302,7 @@ export default function Chat({ profile }) {
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
         <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Messages 💬</div>
         <div style={{ color: '#888', fontSize: 14, fontWeight: 600, marginBottom: 20 }}>
-          Chat across cities — same city or anywhere
+          Chat across cities · be kind · report or block anytime
         </div>
 
         <InlineError message={loadError} onRetry={fetchConversations} />
@@ -240,7 +317,9 @@ export default function Chat({ profile }) {
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>💬</div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>No messages yet</div>
-            <div style={{ color: '#aaa', marginTop: 6, marginBottom: 16 }}>Discover people and start chatting!</div>
+            <div style={{ color: '#aaa', marginTop: 6, marginBottom: 16, lineHeight: 1.5 }}>
+              Discover people and start chatting. Harmful messages and unsafe images are blocked.
+            </div>
             <button onClick={() => navigate('/discover')} style={{
               background: '#FF85B3', color: 'white',
               border: '3px solid #1C1C3A', borderRadius: 50,
@@ -304,12 +383,41 @@ export default function Chat({ profile }) {
           color: 'white', fontWeight: 900, fontSize: 20
         }}>{receiver?.full_name?.[0] || '?'}</div>
 
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 900, fontSize: 16 }}>{receiver?.full_name}</div>
           <div style={{ color: '#888', fontSize: 13 }}>
             @{receiver?.username}{receiver?.city ? ` · ${receiver.city}` : ''}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={handleReport}
+          disabled={safetyBusy}
+          title="Report user"
+          style={{
+            width: 38, height: 38, background: 'white',
+            border: '3px solid #1C1C3A', borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '2px 2px 0 #1C1C3A', cursor: 'pointer', color: '#1C1C3A',
+          }}
+        >
+          <Flag size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={handleBlock}
+          disabled={safetyBusy}
+          title="Block user"
+          style={{
+            width: 38, height: 38, background: '#FFE0E0',
+            border: '3px solid #1C1C3A', borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '2px 2px 0 #1C1C3A', cursor: 'pointer', color: '#CC0000',
+          }}
+        >
+          <Ban size={16} />
+        </button>
       </div>
 
       <div
@@ -395,7 +503,7 @@ export default function Chat({ profile }) {
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            title="Send image"
+            title="Send image (safety-checked)"
             style={{
               width: 50, height: 50, background: 'white',
               border: '3px solid #1C1C3A', borderRadius: 16,

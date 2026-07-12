@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const MAX_CONTEXT_LENGTH = 500;
+const MAX_CONTEXT_LENGTH = 2000;
+const MAX_IMAGE_URL_LENGTH = 2048;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,11 +20,10 @@ function fallbackIcebreaker(context: string) {
   return `Hey! Nice to connect — what got you interested in ${context}?`;
 }
 
-const MODERATION_SYSTEM = `You are a content moderator for a social video app.
-Review the user's reel title, description, and hashtags for spam, scams, hate speech, harassment, or explicit abuse.
+const MODERATION_SYSTEM = `You are a content moderator for The People App (city social + chat).
+Flag messages that clearly involve: harassment, threats, hate speech, sexual solicitation, explicit sexual content, scams, or spam.
 Respond with JSON only: {"flagged": boolean, "reason": string}
-Set flagged true only for clear spam or abusive language. Be conservative — normal casual language is fine.
-If not flagged, use an empty reason string.`;
+Be conservative on casual slang — only flag clear abuse. Empty reason if not flagged.`;
 
 async function callGroq(context: string, apiKey: string): Promise<string | null> {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -129,6 +129,41 @@ async function callOpenAIModerate(text: string, apiKey: string): Promise<{ flagg
   }
 }
 
+/** OpenAI multimodal moderation for chat images */
+async function callOpenAIModerateImage(
+  imageUrl: string,
+  apiKey: string,
+): Promise<{ flagged: boolean; reason: string } | null> {
+  const response = await fetch("https://api.openai.com/v1/moderations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "omni-moderation-latest",
+      input: [
+        {
+          type: "image_url",
+          image_url: { url: imageUrl },
+        },
+      ],
+    }),
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  const result = data?.results?.[0];
+  if (!result) return null;
+  if (!result.flagged) return { flagged: false, reason: "" };
+
+  const cats = result.categories || {};
+  const reasons = Object.keys(cats).filter((k) => cats[k]);
+  return {
+    flagged: true,
+    reason: reasons.length ? `Image flagged: ${reasons.join(", ")}` : "Image flagged as unsafe",
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -154,21 +189,56 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
-  let body: { type?: string; context?: string };
+  let body: { type?: string; context?: string; imageUrl?: string };
   try {
     body = await req.json();
   } catch {
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
-  const { type, context } = body;
+  const { type, context, imageUrl } = body;
 
   if (!type || typeof type !== "string") {
     return jsonResponse({ error: "type is required" }, 400);
   }
 
-  if (type !== "icebreaker" && type !== "moderate_content") {
+  if (type !== "icebreaker" && type !== "moderate_content" && type !== "moderate_image") {
     return jsonResponse({ error: "Invalid type" }, 400);
+  }
+
+  const groqKey = Deno.env.get("GROQ_API_KEY");
+  const openaiKey = Deno.env.get("OPENAI_API_KEY");
+
+  // ── Image moderation ──────────────────────────────────────────────────────
+  if (type === "moderate_image") {
+    if (!imageUrl || typeof imageUrl !== "string" || !imageUrl.trim()) {
+      return jsonResponse({ error: "imageUrl is required" }, 400);
+    }
+    const url = imageUrl.trim();
+    if (url.length > MAX_IMAGE_URL_LENGTH) {
+      return jsonResponse({ error: "imageUrl too long" }, 400);
+    }
+    if (!/^https:\/\//i.test(url)) {
+      return jsonResponse({ error: "imageUrl must be https" }, 400);
+    }
+
+    if (!openaiKey) {
+      return jsonResponse({
+        flagged: true,
+        reason: "Image safety check unavailable",
+        source: "unavailable",
+      });
+    }
+
+    const result = await callOpenAIModerateImage(url, openaiKey);
+    if (!result) {
+      return jsonResponse({
+        flagged: true,
+        reason: "Image safety check failed. Try again later.",
+        source: "error",
+      });
+    }
+    return jsonResponse({ flagged: result.flagged, reason: result.reason, source: "openai" });
   }
 
   if (!context || typeof context !== "string" || !context.trim()) {
@@ -179,9 +249,6 @@ Deno.serve(async (req: Request) => {
   if (trimmedContext.length > MAX_CONTEXT_LENGTH) {
     return jsonResponse({ error: `context must be under ${MAX_CONTEXT_LENGTH} characters` }, 400);
   }
-
-  const groqKey = Deno.env.get("GROQ_API_KEY");
-  const openaiKey = Deno.env.get("OPENAI_API_KEY");
 
   if (type === "moderate_content") {
     if (!groqKey && !openaiKey) {

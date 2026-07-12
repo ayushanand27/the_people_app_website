@@ -22,6 +22,7 @@ If you (the author) want to include a personal motivation note, add a short para
 - Groups: join/leave, list members (Admin CRUD for groups)
 - Events: RSVP/cancel, list upcoming/all (Admin CRUD)
 - Chat: 1:1 messaging + **image attachments** + Supabase realtime; works across cities
+- **Chat safety:** local keyword filter + AI text moderation + OpenAI image moderation; Report/Block in chat; max 10 new DM recipients/hour
 - Local listings: verified shops/services by city
 - Moments: vertical videos (Cloudinary), likes/comments/bookmarks
 - Settings: profile edit, delete account, privacy/terms
@@ -102,9 +103,10 @@ Notes: many queries rely on `postgrest` aggregated counts: e.g. `.select('*, eve
   - Update: `supabase.from('profiles').update(...).eq('id', profile.id)`
 - Messaging & realtime
   - Insert: `supabase.from('messages').insert({ sender_id, receiver_id, content, image_url })`
+  - Safety: `checkChatText` (local) → `moderateChatText` / `moderateChatImage` via `ai-proxy` before insert
   - Query conversation: complex `.or()` filters using `and(...)` (see `src/pages/Chat.jsx`)
   - Realtime subscribe: `supabase.channel('msgs-${id}').on('postgres_changes', {event:'INSERT', table:'messages'}, handler)`
-  - Chat images: `.storage.from('chat-images').upload(path, file)` then `getPublicUrl`
+  - Chat images: `.storage.from('chat-images').upload(path, file)` then `getPublicUrl`; unsafe uploads deleted
 - Groups & group_members
   - `.from('groups').select('*, group_members(count)')`
   - join: `.from('group_members').insert({ group_id, user_id })`
