@@ -286,8 +286,9 @@ export default function Moments({ profile }) {
       const data = await uploadToCloudinary(file, signedParams, setProgress)
       const hashtags = extractHashtags(`${title} ${desc}`)
       const moderationText = `${title} ${desc} ${hashtags.join(' ')}`.trim()
-      const { flagged } = await moderateUploadText(moderationText)
-      const videoStatus = flagged ? 'pending_review' : 'published'
+      await moderateUploadText(moderationText)
+      // DB trigger always forces pending_review until an admin publishes
+      const videoStatus = 'pending_review'
 
       const { error } = await supabase.from('videos').insert({
         user_id: profile.id,
@@ -309,10 +310,7 @@ export default function Moments({ profile }) {
       await fetchVideos()
 
       track('video_upload', { user_id: profile.id, status: videoStatus })
-
-      if (flagged) {
-        alert('Your reel was uploaded but is pending review before it appears publicly.')
-      }
+      alert('Moment uploaded! It will appear publicly after a quick review.')
     } catch (err) {
       setUploadError(err.message || 'Upload failed')
     } finally {

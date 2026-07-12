@@ -115,34 +115,43 @@ function MainApp() {
     return <Navigate to="/reset-password" replace />
   }
 
+  const needsOnboarding = Boolean(session && (!profile || !profile.onboarding_complete))
+  const authed = (el) => {
+    if (!session) return <Navigate to="/auth" />
+    if (needsOnboarding) return <Navigate to="/onboarding" />
+    return el
+  }
+
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={
           !session ? <Auth /> :
-          !profile?.onboarding_complete ? <Navigate to="/onboarding" /> :
+          needsOnboarding ? <Navigate to="/onboarding" /> :
           <Navigate to="/dashboard" />
         } />
         <Route path="/auth" element={
-          !session ? <Auth /> : <Navigate to="/dashboard" />
+          !session ? <Auth /> :
+          needsOnboarding ? <Navigate to="/onboarding" /> :
+          <Navigate to="/dashboard" />
         } />
         <Route path="/onboarding"  element={session ? <Onboarding profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
-        <Route path="/dashboard"   element={session ? <Dashboard profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/discover"    element={session ? <Discover  profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/groups"      element={session ? <Groups    profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/chat"        element={session ? <Chat      profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/chat/:id"    element={session ? <Chat      profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/events"      element={session ? <Events    profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/moments"     element={session ? <Moments   profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/local"      element={session ? <Local     profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/local/:id"  element={session ? <LocalDetail profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/profile/:id" element={session ? <Profile   profile={profile} /> : <Navigate to="/auth" />} />
-        <Route path="/settings"    element={session ? <Settings  profile={profile} setProfile={setProfile} /> : <Navigate to="/auth" />} />
-        <Route path="/notifications" element={session ? <Notifications profile={profile} /> : <Navigate to="/auth" />} />
+        <Route path="/dashboard"   element={authed(<Dashboard profile={profile} />)} />
+        <Route path="/discover"    element={authed(<Discover  profile={profile} />)} />
+        <Route path="/groups"      element={authed(<Groups    profile={profile} />)} />
+        <Route path="/chat"        element={authed(<Chat      profile={profile} />)} />
+        <Route path="/chat/:id"    element={authed(<Chat      profile={profile} />)} />
+        <Route path="/events"      element={authed(<Events    profile={profile} />)} />
+        <Route path="/moments"     element={authed(<Moments   profile={profile} />)} />
+        <Route path="/local"      element={authed(<Local     profile={profile} />)} />
+        <Route path="/local/:id"  element={authed(<LocalDetail profile={profile} />)} />
+        <Route path="/profile/:id" element={authed(<Profile   profile={profile} />)} />
+        <Route path="/settings"    element={authed(<Settings  profile={profile} setProfile={setProfile} />)} />
+        <Route path="/notifications" element={authed(<Notifications profile={profile} />)} />
         <Route path="/admin" element={
-          session && profile?.is_admin
+          session && profile?.is_admin && profile?.onboarding_complete
             ? <Admin profile={profile} />
-            : <Navigate to="/dashboard" />
+            : <Navigate to={needsOnboarding ? '/onboarding' : '/dashboard'} />
         } />
       </Routes>
     </Suspense>

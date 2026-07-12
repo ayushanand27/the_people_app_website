@@ -41,12 +41,20 @@ export default function Events({ profile }) {
   }
 
   async function rsvp(id) {
-    await supabase.from('event_attendees').insert({ event_id: id, user_id: profile.id })
+    const { error } = await supabase.from('event_attendees').insert({ event_id: id, user_id: profile.id })
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'RSVP') || 'Could not RSVP')
+      return
+    }
     setRsvpd(prev => [...prev, id])
   }
 
   async function cancel(id) {
-    await supabase.from('event_attendees').delete().eq('event_id', id).eq('user_id', profile.id)
+    const { error } = await supabase.from('event_attendees').delete().eq('event_id', id).eq('user_id', profile.id)
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Cancel RSVP') || 'Could not cancel RSVP')
+      return
+    }
     setRsvpd(prev => prev.filter(x => x !== id))
   }
 

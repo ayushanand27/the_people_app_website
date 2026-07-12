@@ -58,11 +58,11 @@ export default function Auth() {
     if (!error) await supabase.auth.signOut({ scope: 'local' })
 
     if (error) {
-      const isSmtpLimit = /error sending recovery email|unexpected_failure/i.test(error.message)
+      const isSmtpIssue = /error sending recovery email|unexpected_failure|smtp|rate.?limit/i.test(error.message)
       setMessage(
-        isSmtpLimit
-          ? 'Email could not be sent. Resend test mode only delivers to your Resend signup email (ayush.23fe10cii00144@muj.manipal.edu). Turn off Custom SMTP in Supabase to use default email for Gmail, or verify a domain on Resend for all users.'
-          : error.message
+        isSmtpIssue
+          ? 'Could not send the reset email right now. Try again in a few minutes, or sign in with Google.'
+          : 'Could not send reset email. Check the address and try again.'
       )
     } else {
       setMessage('Password reset link sent! Check your email (open link in browser if using Gmail app).')

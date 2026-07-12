@@ -342,13 +342,18 @@ export default function Settings({ profile, setProfile }) {
               fontWeight: 900, color: '#1C6B3A', textAlign: 'center'
             }}>✅ You are a Premium member!</div>
           ) : (
-            <button style={{
-              width: '100%', background: '#FF9F1C', color: 'white',
-              border: '3px solid #1C1C3A', borderRadius: 50,
-              padding: '14px 20px', fontWeight: 900, fontSize: 16,
-              boxShadow: '4px 4px 0 #1C1C3A', cursor: 'pointer',
-              fontFamily: 'inherit'
-            }}>Upgrade to Premium ⭐</button>
+            <button
+              type="button"
+              disabled
+              title="Coming soon"
+              style={{
+                width: '100%', background: '#FF9F1C', color: 'white',
+                border: '3px solid #1C1C3A', borderRadius: 50,
+                padding: '14px 20px', fontWeight: 900, fontSize: 16,
+                boxShadow: '4px 4px 0 #1C1C3A', cursor: 'not-allowed',
+                fontFamily: 'inherit', opacity: 0.75,
+              }}
+            >Coming soon ⭐</button>
           )}
         </div>
 

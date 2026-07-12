@@ -40,12 +40,20 @@ export default function Groups({ profile }) {
   }
 
   async function joinGroup(id) {
-    await supabase.from('group_members').insert({ group_id: id, user_id: profile.id })
+    const { error } = await supabase.from('group_members').insert({ group_id: id, user_id: profile.id })
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Join group') || 'Could not join group')
+      return
+    }
     setJoined(prev => [...prev, id])
   }
 
   async function leaveGroup(id) {
-    await supabase.from('group_members').delete().eq('group_id', id).eq('user_id', profile.id)
+    const { error } = await supabase.from('group_members').delete().eq('group_id', id).eq('user_id', profile.id)
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Leave group') || 'Could not leave group')
+      return
+    }
     setJoined(prev => prev.filter(x => x !== id))
   }
 
