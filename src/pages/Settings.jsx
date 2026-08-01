@@ -323,46 +323,16 @@ export default function Settings({ profile, setProfile }) {
           </div>
         </div>
 
-        {/* PREMIUM */}
-        <div style={{
-          background: '#FFD699', border: '3px solid #1C1C3A',
-          borderRadius: 20, padding: 20,
-          boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16
-        }}>
-          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>⭐ Premium</div>
-          <div style={{ color: '#555', fontSize: 14, marginBottom: 14 }}>
-            Unlock unlimited matches and exclusive features.
-          </div>
+        {profile?.is_premium && (
           <div style={{
-            background: 'white', border: '3px solid #1C1C3A',
-            borderRadius: 16, padding: 16, marginBottom: 14
+            background: '#B8F0B8', border: '3px solid #4CAF82',
+            borderRadius: 20, padding: 20,
+            boxShadow: '5px 5px 0 #1C1C3A', marginBottom: 16,
+            fontWeight: 900, color: '#1C6B3A', textAlign: 'center',
           }}>
-            <div style={{ fontWeight: 900, fontSize: 22 }}>₹199 / month</div>
-            {['Join up to 5 groups','See who viewed your profile','Priority in discovery','Verified badge'].map(f => (
-              <div key={f} style={{ fontSize: 14, color: '#555', marginTop: 6, fontWeight: 600 }}>✓ {f}</div>
-            ))}
+            ✅ You are a Premium member!
           </div>
-          {profile?.is_premium ? (
-            <div style={{
-              background: '#B8F0B8', border: '3px solid #4CAF82',
-              borderRadius: 14, padding: '12px 16px',
-              fontWeight: 900, color: '#1C6B3A', textAlign: 'center'
-            }}>✅ You are a Premium member!</div>
-          ) : (
-            <button
-              type="button"
-              disabled
-              title="Coming soon"
-              style={{
-                width: '100%', background: '#FF9F1C', color: 'white',
-                border: '3px solid #1C1C3A', borderRadius: 50,
-                padding: '14px 20px', fontWeight: 900, fontSize: 16,
-                boxShadow: '4px 4px 0 #1C1C3A', cursor: 'not-allowed',
-                fontFamily: 'inherit', opacity: 0.75,
-              }}
-            >Coming soon ⭐</button>
-          )}
-        </div>
+        )}
 
         {error && (
           <div style={{

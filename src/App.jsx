@@ -9,6 +9,7 @@ import {
 } from './lib/authRecovery'
 
 import Auth from './pages/Auth'
+import Landing from './pages/Landing'
 import ResetPassword from './pages/ResetPassword'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
@@ -174,7 +175,7 @@ function MainApp() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={
-          !session ? <Auth /> :
+          !session ? <Landing /> :
           needsOnboarding ? <Navigate to="/onboarding" /> :
           <Navigate to="/dashboard" />
         } />

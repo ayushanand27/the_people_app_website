@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { track } from '../lib/analytics'
 import { markPasswordResetPending, markGoogleOAuthPending } from '../lib/authRecovery'
 
 export default function Auth() {
+  const [searchParams] = useSearchParams()
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [mode,     setMode]     = useState('login')
+  const [mode,     setMode]     = useState(initialMode)
   const [loading,  setLoading]  = useState(false)
   const [message,  setMessage]  = useState('')
 
@@ -136,6 +139,12 @@ export default function Auth() {
       <div style={{ width: '100%', maxWidth: 440 }}>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Link to="/" style={{
+            display: 'inline-block', color: '#888', fontWeight: 700, fontSize: 13,
+            textDecoration: 'none', marginBottom: 12,
+          }}>
+            ← Back to home
+          </Link>
           <div style={{
             width: 80, height: 80, background: '#FF85B3',
             border: '4px solid #1C1C3A', borderRadius: 24,
