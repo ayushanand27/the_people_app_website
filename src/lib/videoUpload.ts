@@ -9,11 +9,11 @@ export const VIDEO_LIMITS = {
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
 
-export function isCloudinaryConfigured() {
+export function isCloudinaryConfigured(): boolean {
   return Boolean(CLOUD_NAME)
 }
 
-export function getVideoDuration(file) {
+export function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file)
     const video = document.createElement('video')
@@ -31,8 +31,12 @@ export function getVideoDuration(file) {
   })
 }
 
+export type VideoValidation =
+  | { ok: false; error: string }
+  | { ok: true; duration: number }
+
 /** Client-side pre-check (server re-validates in edge function) */
-export async function validateVideoFile(file) {
+export async function validateVideoFile(file?: File | null): Promise<VideoValidation> {
   if (!file) return { ok: false, error: 'No file selected' }
   if (!isCloudinaryConfigured()) {
     return { ok: false, error: 'Cloudinary is not configured. Add VITE_CLOUDINARY_CLOUD_NAME to .env' }
@@ -44,7 +48,7 @@ export async function validateVideoFile(file) {
     return { ok: false, error: 'Please upload MP4, MOV, or WebM' }
   }
 
-  let duration
+  let duration: number
   try {
     duration = await getVideoDuration(file)
   } catch {
@@ -61,8 +65,17 @@ export async function validateVideoFile(file) {
   return { ok: true, duration }
 }
 
+export interface SignedUploadParams {
+  cloudName?: string
+  apiKey: string
+  timestamp: number
+  signature: string
+  resourceType?: string
+  folder?: string
+}
+
 /** Request a signed upload from the edge function (server validates size + duration) */
-export async function getSignedUploadParams(file, duration) {
+export async function getSignedUploadParams(file: File, duration: number): Promise<SignedUploadParams> {
   const { data, error } = await supabase.functions.invoke('cloudinary-sign', {
     body: {
       fileSize: file.size,
@@ -80,7 +93,17 @@ export async function getSignedUploadParams(file, duration) {
   return data
 }
 
-export function uploadToCloudinary(file, signedParams, onProgress) {
+export interface CloudinaryUploadResult {
+  secure_url: string
+  duration?: number
+  [key: string]: unknown
+}
+
+export function uploadToCloudinary(
+  file: File,
+  signedParams: SignedUploadParams,
+  onProgress?: (percent: number) => void
+): Promise<CloudinaryUploadResult> {
   const cloudName = signedParams.cloudName || CLOUD_NAME
 
   return new Promise((resolve, reject) => {
@@ -123,7 +146,7 @@ export function uploadToCloudinary(file, signedParams, onProgress) {
   })
 }
 
-export function cloudinaryThumbnail(secureUrl) {
+export function cloudinaryThumbnail(secureUrl: string): string {
   return secureUrl
     .replace('/upload/', '/upload/so_0/')
     .replace(/\.[^/.]+$/, '.jpg')

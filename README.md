@@ -30,6 +30,7 @@ This is the canonical domain — it's what's configured as the Supabase Auth Sit
 ## Architecture
 
 - **Frontend**: React 19 + Vite, react-router-dom 7, Tailwind 4. Pages in `src/pages`, shared components in `src/components`, business logic in `src/lib`.
+- **TypeScript**: `src/lib/` is fully migrated to TypeScript (`strict: true`) — every Supabase-facing helper, moderation call, and auth-recovery function has real parameter/return types. Pages (`src/pages/*.jsx`) are not yet migrated; `tsconfig.json` uses `allowJs` so `.ts` and `.jsx` coexist during the incremental migration. `npm run typecheck` runs in CI.
 - **Backend**: Supabase only — no custom server. The client talks to PostgREST, Storage, and Realtime directly via `@supabase/supabase-js`, protected by Postgres Row Level Security (RLS).
 - **Edge Functions** (`supabase/functions/`, Deno/TypeScript) hold every real secret and are the only place secret-requiring work happens:
   - `ai-proxy` — Groq/OpenAI calls for icebreakers and content moderation
@@ -42,11 +43,11 @@ This is the canonical domain — it's what's configured as the Supabase Auth Sit
 
 ## Where to look in the code
 
-- `src/lib/supabase.js` — Supabase client factory
-- `src/lib/ai.js` — icebreaker + moderation calls to the `ai-proxy` edge function
-- `src/lib/authRecovery.js` / `src/lib/authBootstrap.js` — password-reset/OAuth callback routing, run before the Supabase client parses the URL
-- `src/lib/deleteAccount.js` — calls the `delete-account` edge function
-- `src/lib/videoUpload.js` — client-side video validation + signed Cloudinary upload flow
+- `src/lib/supabase.ts` — Supabase client factory
+- `src/lib/ai.ts` — icebreaker + moderation calls to the `ai-proxy` edge function
+- `src/lib/authRecovery.ts` / `src/lib/authBootstrap.ts` — password-reset/OAuth callback routing, run before the Supabase client parses the URL
+- `src/lib/deleteAccount.ts` — calls the `delete-account` edge function
+- `src/lib/videoUpload.ts` — client-side video validation + signed Cloudinary upload flow
 - `src/App.jsx` — router, auth/profile bootstrap, onboarding gate
 - `src/pages/Auth.jsx`, `src/pages/Onboarding.jsx` — signup/login/OAuth, profile creation
 - `src/pages/Discover.jsx` — search and match scoring
@@ -84,10 +85,11 @@ npm run dev
 ## Testing & CI
 
 - Unit tests: Vitest + jsdom + Testing Library (`npm test`). Coverage includes pure logic/library modules (matching, chat safety filters, city parsing, video validation, auth-recovery redirect logic, account deletion, AI/moderation proxy calls, social graph helpers) plus an integration suite (`src/App.test.jsx`) that renders the real `App` component with a mocked Supabase client and exercises the auth/onboarding/admin/banned-user/password-reset routing guards end-to-end.
-- `npm run lint` — ESLint (React hooks rules included)
+- `npm run typecheck` — `tsc --noEmit`, strict mode, covers `src/lib/`
+- `npm run lint` — ESLint (React hooks rules + `typescript-eslint` for `.ts` files)
 - `npm run build` — production Vite build
-- GitHub Actions CI (`.github/workflows/ci.yml`) runs lint → test → build on every push/PR to `main`.
-- **Known gap**: individual pages (Chat, Moments, Dashboard, etc.) don't have their own render tests yet — only the top-level routing/auth-guard layer and library logic are covered. A full E2E suite (Playwright against a real browser) would need a dedicated test Supabase project to avoid exercising production data, which is a separate infra decision.
+- GitHub Actions CI (`.github/workflows/ci.yml`) runs typecheck → lint → test → build on every push/PR to `main`.
+- **Known gaps**: individual pages (Chat, Moments, Dashboard, etc.) don't have their own render tests yet — only the top-level routing/auth-guard layer and library logic are covered. Pages are also still `.jsx`, not yet migrated to TypeScript. A full E2E suite (Playwright against a real browser) would need a dedicated test Supabase project to avoid exercising production data, which is a separate infra decision.
 
 ## Deployment
 

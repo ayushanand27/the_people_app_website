@@ -1,4 +1,4 @@
-export function normalizePhone(number) {
+export function normalizePhone(number?: string | number | null): string {
   if (!number) return ''
   const digits = String(number).replace(/\D/g, '')
   if (digits.length === 10) return digits
@@ -6,7 +6,7 @@ export function normalizePhone(number) {
   return digits
 }
 
-export function whatsappUrl(number, message = '') {
+export function whatsappUrl(number?: string | number | null, message = ''): string | null {
   const n = normalizePhone(number)
   if (!n) return null
   const full = n.length === 10 ? `91${n}` : n
@@ -14,7 +14,7 @@ export function whatsappUrl(number, message = '') {
   return `https://wa.me/${full}${q}`
 }
 
-export function telUrl(number) {
+export function telUrl(number?: string | number | null): string | null {
   const n = normalizePhone(number)
   if (!n) return null
   return `tel:+91${n}`

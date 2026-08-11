@@ -3,12 +3,16 @@ import { supabase } from './supabase'
 // All helpers fail soft: if a table/policy is missing (new Supabase not set up
 // yet), they log and return a safe default instead of throwing.
 
-function soft(error, context) {
+interface SoftError {
+  message?: string
+}
+
+function soft(error: SoftError | null | undefined, context: string): void {
   if (error) console.warn(`[social] ${context}:`, error.message)
 }
 
 // ── HASHTAGS ──────────────────────────────────────────────────────────────────
-export function extractHashtags(text = '') {
+export function extractHashtags(text = ''): string[] {
   // \p{M} covers combining marks (e.g. Devanagari vowel signs like ु in #जयपुर) —
   // without it, hashtags in Hindi/other Indic scripts get silently truncated.
   const matches = text.match(/#[\p{L}\p{M}0-9_]+/gu) || []
@@ -16,7 +20,7 @@ export function extractHashtags(text = '') {
 }
 
 // ── FOLLOWS ───────────────────────────────────────────────────────────────────
-export async function isFollowing(followerId, followingId) {
+export async function isFollowing(followerId?: string | null, followingId?: string | null): Promise<boolean> {
   if (!followerId || !followingId) return false
   const { data, error } = await supabase
     .from('follows')
@@ -28,7 +32,7 @@ export async function isFollowing(followerId, followingId) {
   return Boolean(data)
 }
 
-export async function followUser(followerId, followingId) {
+export async function followUser(followerId: string, followingId: string): Promise<boolean> {
   const { error } = await supabase
     .from('follows')
     .insert({ follower_id: followerId, following_id: followingId })
@@ -39,7 +43,7 @@ export async function followUser(followerId, followingId) {
   return !error
 }
 
-export async function unfollowUser(followerId, followingId) {
+export async function unfollowUser(followerId: string, followingId: string): Promise<boolean> {
   const { error } = await supabase
     .from('follows')
     .delete()
@@ -49,7 +53,7 @@ export async function unfollowUser(followerId, followingId) {
   return !error
 }
 
-export async function getFollowingIds(userId) {
+export async function getFollowingIds(userId?: string | null): Promise<string[]> {
   if (!userId) return []
   const { data, error } = await supabase
     .from('follows')
@@ -60,7 +64,7 @@ export async function getFollowingIds(userId) {
 }
 
 // ── BOOKMARKS ─────────────────────────────────────────────────────────────────
-export async function getBookmarkedIds(userId) {
+export async function getBookmarkedIds(userId?: string | null): Promise<string[]> {
   if (!userId) return []
   const { data, error } = await supabase
     .from('video_bookmarks')
@@ -70,7 +74,7 @@ export async function getBookmarkedIds(userId) {
   return (data || []).map(b => b.video_id)
 }
 
-export async function toggleBookmark(videoId, userId, currentlyBookmarked) {
+export async function toggleBookmark(videoId: string, userId: string, currentlyBookmarked: boolean): Promise<boolean> {
   if (currentlyBookmarked) {
     const { error } = await supabase
       .from('video_bookmarks')
@@ -88,7 +92,14 @@ export async function toggleBookmark(videoId, userId, currentlyBookmarked) {
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
-export async function createNotification({ userId, actorId, type, entityId = null }) {
+export interface CreateNotificationInput {
+  userId?: string | null
+  actorId?: string | null
+  type: string
+  entityId?: string | null
+}
+
+export async function createNotification({ userId, actorId, type, entityId = null }: CreateNotificationInput): Promise<void> {
   if (!userId || !actorId || userId === actorId) return // never notify self
   const { error } = await supabase
     .from('notifications')
@@ -96,7 +107,7 @@ export async function createNotification({ userId, actorId, type, entityId = nul
   soft(error, 'createNotification')
 }
 
-export async function getNotifications(userId, limit = 50) {
+export async function getNotifications(userId?: string | null, limit = 50) {
   if (!userId) return []
   const { data, error } = await supabase
     .from('notifications')
@@ -108,7 +119,7 @@ export async function getNotifications(userId, limit = 50) {
   return data || []
 }
 
-export async function getUnreadNotificationCount(userId) {
+export async function getUnreadNotificationCount(userId?: string | null): Promise<number> {
   if (!userId) return 0
   const { count, error } = await supabase
     .from('notifications')
@@ -119,7 +130,7 @@ export async function getUnreadNotificationCount(userId) {
   return count || 0
 }
 
-export async function markNotificationsRead(userId) {
+export async function markNotificationsRead(userId: string): Promise<void> {
   const { error } = await supabase
     .from('notifications')
     .update({ read: true })
@@ -129,7 +140,14 @@ export async function markNotificationsRead(userId) {
 }
 
 // ── SAFETY: REPORT & BLOCK ────────────────────────────────────────────────────
-export async function reportContent({ reporterId, targetType, targetId, reason = '' }) {
+export interface ReportContentInput {
+  reporterId: string
+  targetType: string
+  targetId: string
+  reason?: string
+}
+
+export async function reportContent({ reporterId, targetType, targetId, reason = '' }: ReportContentInput): Promise<boolean> {
   const { error } = await supabase
     .from('reports')
     .insert({ reporter_id: reporterId, target_type: targetType, target_id: targetId, reason })
@@ -137,7 +155,7 @@ export async function reportContent({ reporterId, targetType, targetId, reason =
   return !error
 }
 
-export async function blockUser(blockerId, blockedId) {
+export async function blockUser(blockerId: string, blockedId: string): Promise<boolean> {
   const { error } = await supabase
     .from('blocks')
     .insert({ blocker_id: blockerId, blocked_id: blockedId })
@@ -146,7 +164,7 @@ export async function blockUser(blockerId, blockedId) {
 }
 
 /** IDs of users blocked in either direction (you blocked them, or they blocked you). */
-export async function getBlockedIds(userId) {
+export async function getBlockedIds(userId?: string | null): Promise<string[]> {
   if (!userId) return []
   const { data, error } = await supabase
     .from('blocks')

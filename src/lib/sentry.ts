@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react'
 
 const dsn = import.meta.env.VITE_SENTRY_DSN
 
-export function initSentry() {
+export function initSentry(): void {
   if (!dsn) return
 
   Sentry.init({

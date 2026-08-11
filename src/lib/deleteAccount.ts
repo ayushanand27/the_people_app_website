@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
 /** Permanently delete the current user's account via edge function */
-export async function deleteAccount() {
+export async function deleteAccount(): Promise<{ error: Error | null }> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return { error: new Error('Not signed in') }
 

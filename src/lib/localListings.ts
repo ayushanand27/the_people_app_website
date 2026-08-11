@@ -1,6 +1,12 @@
 import { supabase } from './supabase'
 
-export const LISTING_CATEGORIES = [
+export interface ListingCategory {
+  id: string
+  label: string
+  emoji: string
+}
+
+export const LISTING_CATEGORIES: ListingCategory[] = [
   { id: 'real_estate', label: 'Real Estate', emoji: '🏠' },
   { id: 'construction', label: 'Construction', emoji: '🧱' },
   { id: 'hotels_food', label: 'Hotels & Food', emoji: '🍽️' },
@@ -10,15 +16,22 @@ export const LISTING_CATEGORIES = [
   { id: 'other', label: 'Other', emoji: '📌' },
 ]
 
-export function categoryLabel(id) {
-  return LISTING_CATEGORIES.find(c => c.id === id)?.label || id
+export function categoryLabel(id?: string | null): string {
+  return LISTING_CATEGORIES.find(c => c.id === id)?.label || String(id)
 }
 
-export function categoryEmoji(id) {
+export function categoryEmoji(id?: string | null): string {
   return LISTING_CATEGORIES.find(c => c.id === id)?.emoji || '📌'
 }
 
-export async function fetchVerifiedListings({ city, category, search, limit = 50 }) {
+export interface FetchListingsParams {
+  city?: string
+  category?: string
+  search?: string
+  limit?: number
+}
+
+export async function fetchVerifiedListings({ city, category, search, limit = 50 }: FetchListingsParams) {
   let query = supabase
     .from('local_listings')
     .select('id, city, category, title, description, price_text, phone, whatsapp, images, owner_id, created_at')
@@ -46,7 +59,7 @@ export async function fetchVerifiedListings({ city, category, search, limit = 50
   return rows
 }
 
-export async function fetchListingById(id) {
+export async function fetchListingById(id: string) {
   const { data, error } = await supabase
     .from('local_listings')
     .select('*, owner:profiles!owner_id(id, full_name, username, avatar_url)')
@@ -76,7 +89,7 @@ export async function fetchPendingUpdateRequests() {
   return data || []
 }
 
-export async function createListing(payload) {
+export async function createListing(payload: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('local_listings')
     .insert(payload)
@@ -86,7 +99,7 @@ export async function createListing(payload) {
   return data
 }
 
-export async function updateListing(id, payload) {
+export async function updateListing(id: string, payload: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('local_listings')
     .update(payload)
@@ -97,7 +110,7 @@ export async function updateListing(id, payload) {
   return data
 }
 
-export async function verifyListing(id, adminId) {
+export async function verifyListing(id: string, adminId: string) {
   return updateListing(id, {
     status: 'verified',
     verified_by: adminId,
@@ -105,15 +118,22 @@ export async function verifyListing(id, adminId) {
   })
 }
 
-export async function archiveListing(id) {
+export async function archiveListing(id: string) {
   return updateListing(id, { status: 'archived' })
 }
 
-export async function approveUpdateRequest(request, adminId) {
+export interface UpdateRequestLike {
+  id: string
+  listing_id: string
+  changes?: Record<string, unknown>
+}
+
+const ALLOWED_UPDATE_KEYS = ['title', 'description', 'price_text', 'phone', 'whatsapp', 'images', 'category', 'city']
+
+export async function approveUpdateRequest(request: UpdateRequestLike, adminId: string): Promise<void> {
   const changes = request.changes || {}
-  const allowed = ['title', 'description', 'price_text', 'phone', 'whatsapp', 'images', 'category', 'city']
-  const patch = {}
-  for (const key of allowed) {
+  const patch: Record<string, unknown> = {}
+  for (const key of ALLOWED_UPDATE_KEYS) {
     if (changes[key] !== undefined) patch[key] = changes[key]
   }
 
@@ -132,7 +152,7 @@ export async function approveUpdateRequest(request, adminId) {
   if (error) throw error
 }
 
-export async function rejectUpdateRequest(id, adminId) {
+export async function rejectUpdateRequest(id: string, adminId: string): Promise<void> {
   const { error } = await supabase
     .from('listing_update_requests')
     .update({
@@ -144,7 +164,14 @@ export async function rejectUpdateRequest(id, adminId) {
   if (error) throw error
 }
 
-export async function submitListingUpdateRequest({ listingId, userId, changes, note }) {
+export interface SubmitUpdateRequestInput {
+  listingId: string
+  userId: string
+  changes: Record<string, unknown>
+  note?: string
+}
+
+export async function submitListingUpdateRequest({ listingId, userId, changes, note }: SubmitUpdateRequestInput) {
   const { data, error } = await supabase
     .from('listing_update_requests')
     .insert({
@@ -159,7 +186,7 @@ export async function submitListingUpdateRequest({ listingId, userId, changes, n
   return data
 }
 
-export async function uploadListingImage(file) {
+export async function uploadListingImage(file: File): Promise<string> {
   const ext = file.name.split('.').pop() || 'jpg'
   const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
   const { error } = await supabase.storage

@@ -2,7 +2,7 @@ import posthog from 'posthog-js'
 
 const KEY = import.meta.env.VITE_POSTHOG_KEY
 
-export function initAnalytics() {
+export function initAnalytics(): void {
   if (!KEY) return
 
   posthog.init(KEY, {
@@ -16,13 +16,13 @@ export function initAnalytics() {
   })
 }
 
-export function identifyUser(userId) {
+export function identifyUser(userId?: string | null): void {
   if (!KEY || !userId || import.meta.env.DEV) return
   posthog.identify(userId)
 }
 
 /** Track a named event. Only pass user_id as PII in properties. */
-export function track(event, properties = {}) {
+export function track(event: string, properties: Record<string, unknown> = {}): void {
   if (!KEY || import.meta.env.DEV) return
   posthog.capture(event, properties)
 }

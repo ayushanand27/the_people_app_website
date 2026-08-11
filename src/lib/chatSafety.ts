@@ -15,11 +15,9 @@ const BLOCKED_PATTERNS = [
 
 const URL_RE = /https?:\/\/[^\s]+|www\.[^\s]+/gi
 
-/**
- * @param {string} text
- * @returns {{ ok: true } | { ok: false, reason: string }}
- */
-export function checkChatText(text) {
+export type ChatTextCheck = { ok: true } | { ok: false; reason: string }
+
+export function checkChatText(text?: string | null): ChatTextCheck {
   const raw = String(text || '')
   const trimmed = raw.trim()
   if (!trimmed) return { ok: true }

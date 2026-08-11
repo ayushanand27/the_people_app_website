@@ -1,9 +1,15 @@
 import { supabase } from './supabase'
 
-const FALLBACK = (context) =>
+export interface ModerationResult {
+  flagged: boolean
+  reason?: string | null
+  unavailable?: boolean
+}
+
+const FALLBACK = (context: string): string =>
   `Hey! Nice to connect — what got you interested in ${context}?`
 
-export async function generateIcebreaker(context = 'new connection') {
+export async function generateIcebreaker(context = 'new connection'): Promise<string> {
   const trimmed = String(context || '').trim() || 'new connection'
 
   const { data, error } = await supabase.functions.invoke('ai-proxy', {
@@ -24,7 +30,7 @@ export async function generateIcebreaker(context = 'new connection') {
 }
 
 /** Returns true if description/hashtags look like spam or abusive content. */
-export async function moderateUploadText(text) {
+export async function moderateUploadText(text?: string | null): Promise<ModerationResult> {
   const trimmed = String(text || '').trim()
   if (!trimmed) return { flagged: false }
 
@@ -44,7 +50,7 @@ export async function moderateUploadText(text) {
  * Chat text moderation via AI.
  * If AI is down, returns flagged:false so local filter remains the gate.
  */
-export async function moderateChatText(text) {
+export async function moderateChatText(text?: string | null): Promise<ModerationResult> {
   const trimmed = String(text || '').trim()
   if (!trimmed) return { flagged: false, unavailable: false }
 
@@ -67,7 +73,7 @@ export async function moderateChatText(text) {
 /**
  * Chat image moderation. Fail closed: unavailable = treat as blocked.
  */
-export async function moderateChatImage(imageUrl) {
+export async function moderateChatImage(imageUrl?: string | null): Promise<ModerationResult> {
   const url = String(imageUrl || '').trim()
   if (!url) return { flagged: true, reason: 'Missing image URL', unavailable: true }
 
