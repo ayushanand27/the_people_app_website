@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /discover
+Disallow: /groups
+Disallow: /chat
+Disallow: /events
+Disallow: /moments
+Disallow: /local
+Disallow: /profile
+Disallow: /settings
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /reset-password
+
+Sitemap: https://the-people-app-website.vercel.app/sitemap.xml

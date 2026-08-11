@@ -182,6 +182,7 @@ export default function Settings({ profile, setProfile }) {
               </div>
               <button
                 onClick={() => fileRef.current?.click()}
+                aria-label="Change profile photo"
                 style={{
                   position: 'absolute', bottom: -6, right: -6,
                   width: 32, height: 32, borderRadius: 10,

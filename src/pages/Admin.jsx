@@ -371,7 +371,7 @@ export default function Admin({ profile }) {
                       📍 {g.city} · 👥 {g.group_members?.[0]?.count || 0}/{g.max_members}
                     </div>
                   </div>
-                  <button onClick={() => deleteGroup(g.id)} style={{
+                  <button onClick={() => deleteGroup(g.id)} aria-label={`Delete group ${g.name}`} style={{
                     background: '#FFE0E0', border: '2.5px solid #FF6B6B',
                     borderRadius: 10, padding: '8px 12px',
                     cursor: 'pointer', display: 'flex', alignItems: 'center'
@@ -466,7 +466,7 @@ export default function Admin({ profile }) {
                     </div>
                     <div style={{ color: '#555', fontSize: 12, marginTop: 2 }}>📌 {ev.location}</div>
                   </div>
-                  <button onClick={() => deleteEvent(ev.id)} style={{
+                  <button onClick={() => deleteEvent(ev.id)} aria-label={`Delete event ${ev.title}`} style={{
                     background: '#FFE0E0', border: '2.5px solid #FF6B6B',
                     borderRadius: 10, padding: '8px 12px',
                     cursor: 'pointer', display: 'flex', alignItems: 'center'

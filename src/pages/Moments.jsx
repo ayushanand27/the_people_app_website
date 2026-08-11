@@ -596,7 +596,7 @@ export default function Moments({ profile }) {
                   position: 'absolute', right: 16, bottom: 120,
                   display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center',
                 }}>
-                  <button onClick={() => navigate(`/profile/${video.user_id}`)} style={avatarBtnStyle}>
+                  <button onClick={() => navigate(`/profile/${video.user_id}`)} aria-label={`View ${video.profiles?.full_name || 'profile'}`} style={avatarBtnStyle}>
                     {video.profiles?.avatar_url ? (
                       <img src={video.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : video.profiles?.full_name?.[0] || '?'}
@@ -606,28 +606,33 @@ export default function Moments({ profile }) {
                     icon={<Heart size={26} fill={isLiked ? '#FF6B6B' : 'none'} color={isLiked ? '#FF6B6B' : 'white'} />}
                     count={video.likes || 0}
                     onClick={() => toggleLike(video.id)}
+                    label={isLiked ? 'Unlike' : 'Like'}
                   />
 
                   <ActionButton
                     icon={<MessageCircle size={26} color="white" />}
                     count={video.comment_count || 0}
                     onClick={() => openComments(video.id)}
+                    label="View comments"
                   />
 
                   <ActionButton
                     icon={<Share2 size={24} color="white" />}
                     onClick={() => shareVideo(video)}
+                    label="Share"
                   />
 
                   <ActionButton
                     icon={<Bookmark size={24} fill={isSaved ? '#FFD699' : 'none'} color={isSaved ? '#FFD699' : 'white'} />}
                     onClick={() => handleBookmark(video.id)}
+                    label={isSaved ? 'Remove bookmark' : 'Bookmark'}
                   />
 
                   {video.user_id !== profile.id && (
                     <ActionButton
                       icon={<span style={{ color: 'white', fontWeight: 900, fontSize: 20 }}>···</span>}
                       onClick={() => setShowMore(showMore === video.id ? null : video.id)}
+                      label="More options"
                     />
                   )}
 
@@ -650,6 +655,7 @@ export default function Moments({ profile }) {
                     <ActionButton
                       icon={<Trash2 size={22} color="#FF6B6B" />}
                       onClick={() => deleteVideo(video.id)}
+                      label="Delete moment"
                     />
                   )}
                 </div>
@@ -698,7 +704,7 @@ export default function Moments({ profile }) {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontWeight: 900, fontSize: 20 }}>Upload Moment 🎬</div>
-              <button onClick={() => { setShowUpload(false); setUploadError('') }} style={closeBtnStyle}>
+              <button onClick={() => { setShowUpload(false); setUploadError('') }} aria-label="Close upload dialog" style={closeBtnStyle}>
                 <X size={18} color="#CC0000" />
               </button>
             </div>
@@ -759,7 +765,7 @@ export default function Moments({ profile }) {
           }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ fontWeight: 900, fontSize: 18 }}>Comments</div>
-              <button onClick={() => setCommentsOpen(null)} style={closeBtnStyle}><X size={18} /></button>
+              <button onClick={() => setCommentsOpen(null)} aria-label="Close comments" style={closeBtnStyle}><X size={18} /></button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', marginBottom: 12 }}>
@@ -803,10 +809,10 @@ export default function Moments({ profile }) {
   )
 }
 
-function ActionButton({ icon, count, onClick }) {
+function ActionButton({ icon, count, onClick, label }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <button onClick={onClick} style={actionBtnStyle}>{icon}</button>
+      <button onClick={onClick} aria-label={label} style={actionBtnStyle}>{icon}</button>
       {count !== undefined && (
         <span style={{ color: 'white', fontSize: 13, fontWeight: 700 }}>{count}</span>
       )}

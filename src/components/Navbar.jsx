@@ -106,6 +106,7 @@ export default function Navbar({ active, profile }) {
           />
           <button
             onClick={() => navigate('/notifications')}
+            aria-label={notifCount > 0 ? `Notifications (${notifCount} unread)` : 'Notifications'}
             style={{
               width: 40, height: 40, background: notifCount > 0 ? '#FF85B3' : 'white',
               borderRadius: 12, border: '3px solid #1C1C3A',
@@ -127,6 +128,7 @@ export default function Navbar({ active, profile }) {
           </button>
           <button
             onClick={() => navigate(`/profile/${profile?.id}`)}
+            aria-label="Your profile"
             style={{
               width: 40, height: 40, background: '#FF85B3',
               borderRadius: 12, border: '3px solid #1C1C3A',

@@ -23,6 +23,9 @@ This is the canonical domain — it's what's configured as the Supabase Auth Sit
 - **Admin panel** (`/admin`, gated by `profiles.is_admin`): CRUD for groups/events/listings, user list, reports/moderation queue, bans
 - **AI helper**: icebreaker generation + content moderation, proxied server-side through the `ai-proxy` Supabase Edge Function — no AI provider keys ever reach the browser
 - **Moderation**: user blocking/reporting; blocked users are hidden from profiles, discover, and chat
+- **PWA**: installable on mobile via `vite-plugin-pwa` (manifest + service worker, precaches only this app's own build output — never intercepts Supabase API/Realtime traffic)
+- **Accessibility**: icon-only buttons across the app carry `aria-label`s for screen readers
+- **SEO**: `robots.txt` + `sitemap.xml` for the public marketing routes (`/`, `/privacy`, `/terms`) — everything else is auth-gated and intentionally excluded from indexing
 
 ## Architecture
 

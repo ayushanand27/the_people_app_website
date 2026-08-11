@@ -389,7 +389,7 @@ export default function Chat({ profile }) {
         background: 'white', borderBottom: '3px solid #1C1C3A',
         padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12
       }}>
-        <button onClick={() => navigate('/chat')} style={{
+        <button onClick={() => navigate('/chat')} aria-label="Back to conversations" style={{
           width: 38, height: 38, background: '#FFF0F5',
           border: '3px solid #1C1C3A', borderRadius: 12,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -415,6 +415,7 @@ export default function Chat({ profile }) {
           onClick={handleReport}
           disabled={safetyBusy}
           title="Report user"
+          aria-label="Report user"
           style={{
             width: 38, height: 38, background: 'white',
             border: '3px solid #1C1C3A', borderRadius: 12,
@@ -429,6 +430,7 @@ export default function Chat({ profile }) {
           onClick={handleBlock}
           disabled={safetyBusy}
           title="Block user"
+          aria-label="Block user"
           style={{
             width: 38, height: 38, background: '#FFE0E0',
             border: '3px solid #1C1C3A', borderRadius: 12,
@@ -508,7 +510,7 @@ export default function Chat({ profile }) {
               alt="Preview"
               style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 12, border: '2px solid #1C1C3A' }}
             />
-            <button type="button" onClick={clearPendingImage} style={{
+            <button type="button" onClick={clearPendingImage} aria-label="Remove image" style={{
               width: 32, height: 32, borderRadius: 10, border: '2px solid #1C1C3A',
               background: '#FFE0E0', cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
@@ -524,6 +526,7 @@ export default function Chat({ profile }) {
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
             title="Send image (safety-checked)"
+            aria-label="Attach image"
             style={{
               width: 50, height: 50, background: 'white',
               border: '3px solid #1C1C3A', borderRadius: 16,
@@ -547,7 +550,7 @@ export default function Chat({ profile }) {
               fontFamily: 'inherit'
             }}
           />
-          <button type="submit" disabled={uploading || (!newMsg.trim() && !pendingImage)} style={{
+          <button type="submit" disabled={uploading || (!newMsg.trim() && !pendingImage)} aria-label="Send message" style={{
             width: 50, height: 50, background: '#FF85B3',
             border: '3px solid #1C1C3A', borderRadius: 16,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
