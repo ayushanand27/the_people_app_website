@@ -52,6 +52,11 @@ export default function Onboarding({ profile, setProfile }) {
       return
     }
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setError('Your session expired. Please log in again.')
+      setLoading(false)
+      return
+    }
     const { data, error: err } = await supabase.from('profiles')
       .update({
         full_name: fullName,

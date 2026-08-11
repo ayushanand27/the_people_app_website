@@ -55,6 +55,11 @@ export default function Settings({ profile, setProfile }) {
     setError('')
 
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setError('Your session expired. Please log in again.')
+      setUploading(false)
+      return
+    }
     const fileExt  = file.name.split('.').pop()
     const filePath = `${user.id}/avatar.${fileExt}`
 

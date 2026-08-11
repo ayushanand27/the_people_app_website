@@ -105,7 +105,7 @@ export default function Events({ profile }) {
           }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
             <div style={{ fontWeight: 900, fontSize: 18 }}>No events in {browseCity} yet</div>
-            <div style={{ color: '#aaa', marginTop: 6 }}>Events coming soon!</div>
+            <div style={{ color: '#aaa', marginTop: 6 }}>Check back soon, or be the first to host one!</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

@@ -15,8 +15,12 @@ const supabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY,
   auth: { flowType: 'pkce', detectSessionInUrl: false },
 })
 
-const email = process.argv[2] || 'ayushanandchoudhary543@gmail.com'
-const redirectTo = 'https://the-prople-app-website.vercel.app/reset-password'
+const email = process.argv[2]
+if (!email) {
+  console.error('Usage: node scripts/test-reset-email.mjs <email>')
+  process.exit(1)
+}
+const redirectTo = 'https://the-people-app-website.vercel.app/reset-password'
 
 console.log('Testing resetPasswordForEmail for:', email)
 const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })

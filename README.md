@@ -1,229 +1,99 @@
-# The People App — Detailed Technical README
+# The People App — Technical README
 
-This document explains why the app was created, what was implemented, how it works (end-to-end), and all technical details you need to run, extend, test and deploy the project.
+A privacy-forward social discovery app: find people, groups, events, and local businesses by shared interests and city, chat in real time, and share short vertical videos ("Moments").
 
-## Quick summary / motivation
-
-The People App was built to create a lightweight, privacy-forward social discovery experience focused on shared interests and local communities. The main goals:
-
-- Help people find like-minded local groups, events and individuals
-- Make messaging, profile discovery, and lightweight media (moments) first-class
-- Ship quickly using serverless/backed-by-BaaS tools (Supabase + Cloudinary) and a small React codebase
-- Provide clear client-side logic that can be extended or converted to a server-backed API later
-
-If you (the author) want to include a personal motivation note, add a short paragraph here about product choices, experiments, or lessons learned.
-
-## Features implemented (detailed)
-
-- Authentication: Email/password and Google OAuth (via Supabase)
-- Onboarding flow: collect name, username, city, interests (3–5)
-- Profiles: view, edit, avatar uploads (Supabase Storage)
-- Discovery: **browse-city people first**, then other cities (cross-city messaging); filter by interest and search
-- Groups: join/leave, list members (Admin CRUD for groups)
-- Events: RSVP/cancel, list upcoming/all (Admin CRUD)
-- Chat: 1:1 messaging + **image attachments** + Supabase realtime; works across cities
-- **Chat safety:** local keyword filter + AI text moderation + OpenAI image moderation; Report/Block in chat; max 10 new DM recipients/hour
-- Local listings: verified shops/services by city
-- Moments: vertical videos (Cloudinary), likes/comments/bookmarks
-- Settings: profile edit, delete account, privacy/terms
-- Admin panel: groups/events/listings/reports
-- Optional AI helper: `src/lib/ai.js` (icebreakers / moderation via edge functions)
+For step-by-step deploy/setup instructions (Supabase dashboard config, Vercel env vars, edge function secrets), see [SETUP.md](SETUP.md). This document covers architecture, features, and how the code works.
 
 ## Live URL
 
 - Production: https://the-people-app-website.vercel.app/
 
-## Architecture & high-level flow
+This is the canonical domain — it's what's configured as the Supabase Auth Site URL, so auth redirects (password reset, Google OAuth) only work correctly against this URL.
 
-- Frontend: React + Vite. Pages live under `src/pages`, reusable components in `src/components`.
-- Backend: Client uses Supabase directly — no custom server in this project. The client calls PostgREST endpoints, Storage and Realtime via `@supabase/supabase-js`.
-- Realtime: Supabase Realtime (Postgres changes) provides live message updates and unread notifications.
-- Storage/Media: Avatars in `avatars`; chat images in `chat-images`; listing images in `listing-images`. Moments videos use Cloudinary (signed uploads via edge function).
+## Features implemented
+
+- **Auth**: Email/password + Google OAuth via Supabase, with an onboarding gate and password-reset recovery flow
+- **Onboarding & Profiles**: name, username, city, interests (3–5), avatar upload (Supabase Storage), edit/delete account
+- **Discovery**: browse-city people first, then other cities; filter by interest, basic match scoring
+- **Groups**: browse/join/leave (creation & editing is admin-only — see Security below)
+- **Events**: browse/RSVP/cancel (creation & editing is admin-only)
+- **Chat**: 1:1 realtime messaging, image attachments, cross-city; local keyword filter + AI text/image moderation before send; report/block; rate-limited to 10 new DM recipients/hour
+- **Moments**: vertical video feed, signed Cloudinary uploads (server-validated size/duration), likes
+- **Local**: verified business/listing marketplace with admin approval
+- **Admin panel** (`/admin`, gated by `profiles.is_admin`): CRUD for groups/events/listings, user list, reports/moderation queue, bans
+- **AI helper**: icebreaker generation + content moderation, proxied server-side through the `ai-proxy` Supabase Edge Function — no AI provider keys ever reach the browser
+- **Moderation**: user blocking/reporting; blocked users are hidden from profiles, discover, and chat
+
+## Architecture
+
+- **Frontend**: React 19 + Vite, react-router-dom 7, Tailwind 4. Pages in `src/pages`, shared components in `src/components`, business logic in `src/lib`.
+- **Backend**: Supabase only — no custom server. The client talks to PostgREST, Storage, and Realtime directly via `@supabase/supabase-js`, protected by Postgres Row Level Security (RLS).
+- **Edge Functions** (`supabase/functions/`, Deno/TypeScript) hold every real secret and are the only place secret-requiring work happens:
+  - `ai-proxy` — Groq/OpenAI calls for icebreakers and content moderation
+  - `cloudinary-sign` — signs video uploads server-side after validating size/duration
+  - `delete-account` — permanently deletes a user's account and data
+- **Database**: 22 SQL migrations in `supabase/migrations/` define schema, RLS policies, admin flags, rate limits, moderation state, and capacity triggers.
+- **Media**: Avatars/chat/listing images in Supabase Storage; Moments videos via signed Cloudinary uploads.
+- **Observability**: Sentry (errors, production only) + PostHog (analytics, production only, EU region).
+- **Deployment**: Vercel, with CSP and security headers in `vercel.json`.
 
 ## Where to look in the code
 
-- `src/lib/supabase.js` — Supabase client factory (reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`)
-- `src/lib/ai.js` — small helper to generate icebreakers using OpenAI
-- `src/App.jsx` — top-level router and auth/profile bootstrap
-- `src/components/Navbar.jsx` — navigation and realtime unread counter
-- `src/pages/Auth.jsx` — login/signup and OAuth
-- `src/pages/Onboarding.jsx` — profile creation
+- `src/lib/supabase.js` — Supabase client factory
+- `src/lib/ai.js` — icebreaker + moderation calls to the `ai-proxy` edge function
+- `src/lib/authRecovery.js` / `src/lib/authBootstrap.js` — password-reset/OAuth callback routing, run before the Supabase client parses the URL
+- `src/lib/deleteAccount.js` — calls the `delete-account` edge function
+- `src/lib/videoUpload.js` — client-side video validation + signed Cloudinary upload flow
+- `src/App.jsx` — router, auth/profile bootstrap, onboarding gate
+- `src/pages/Auth.jsx`, `src/pages/Onboarding.jsx` — signup/login/OAuth, profile creation
 - `src/pages/Discover.jsx` — search and match scoring
-- `src/pages/Groups.jsx`, `src/pages/Events.jsx` — group & event flows
-- `src/pages/Chat.jsx` — messaging UI with realtime subscription
-- `src/pages/Moments.jsx` — video feed & Cloudinary upload
-- `src/pages/Settings.jsx` — profile updates and avatar uploads
-- `src/pages/Admin.jsx` — admin CRUD for groups/events/users
+- `src/pages/Groups.jsx`, `src/pages/Events.jsx` — browse/join/RSVP (read + membership only; creation is admin-only)
+- `src/pages/Chat.jsx` — messaging UI with realtime subscription and moderation
+- `src/pages/Moments.jsx` — video feed & upload
+- `src/pages/Local.jsx`, `src/pages/LocalDetail.jsx` — business listings
+- `src/pages/Settings.jsx` — profile updates, avatar upload, account deletion
+- `src/pages/Admin.jsx` + `src/pages/admin/AdminListingsTab.jsx` + `src/pages/admin/AdminReportsTab.jsx` — admin panel
 
-## Database schema (inferred)
+## Database & security model
 
-Create these tables in Supabase (or adapt):
+Schema and RLS policies live in `supabase/migrations/` (apply in order; see SETUP.md for how to run them against a project). Highlights:
 
-- profiles
-  - id (uuid, PK)
-  - full_name, username, bio, city
-  - interests (text[] or jsonb)
-  - avatar_url, onboarding_complete (bool), is_premium (bool)
-  - created_at, updated_at
+- RLS is enabled on every table; policies are scoped to `auth.uid()` and a `SECURITY DEFINER` `public.is_admin_user()` helper (avoids the RLS-recursion trap of querying `profiles` from within a `profiles` policy).
+- **Admin-only writes**: `groups` and `events` can only be inserted/updated by admins (`public.is_admin_user()`), matching the fact that only the Admin panel UI creates them — regular users only read and manage their own `group_members`/`event_attendees` rows.
+- Group/event capacity is enforced server-side via triggers (`20_enforce_capacity.sql`), not just client-side checks.
+- Blocked users are filtered out at the RLS/query level, not just hidden in the UI (`18_block_hides_profiles.sql`).
+- Chat has a server-enforced new-recipient rate limit (`17_chat_new_recipient_rate_limit.sql`).
 
-- messages
-  - id, sender_id, receiver_id, content, image_url, read (bool), created_at
-  - Chat is **not** city-scoped — any two authenticated users can message (unless blocked)
-  - Images stored in Storage bucket `chat-images` under `{user_id}/...`
+Because the app is client-first, RLS is the actual security boundary — any policy gap is a real vulnerability, not just a UI bug. When adding a new table or write path, always ask "what INSERT/UPDATE/DELETE policy governs this, and does it match who the UI intends to allow?"
 
-- groups
-  - id, name, description, city, interests (text[]), max_members, created_by, created_at
+## Environment variables
 
-- group_members
-  - id, group_id, user_id
+See `.env.example` for the full list with descriptions. Client-side (`VITE_`-prefixed) variables are safe to expose in the browser bundle; anything without that prefix (`GROQ_API_KEY`, `OPENAI_API_KEY`, Cloudinary API secret) must only ever be set as a Supabase Edge Function secret — never in `.env` or Vercel env vars.
 
-- events
-  - id, title, description, city, date (timestamp), location, max_attendees, created_by
-
-- event_attendees
-  - id, event_id, user_id
-
-- videos
-  - id, user_id, title, description, video_url, thumbnail_url, duration, likes, created_at
-
-- video_likes
-  - id, video_id, user_id
-
-Notes: many queries rely on `postgrest` aggregated counts: e.g. `.select('*, event_attendees(count)')` to get attendee counts.
-
-## Supabase calls & client-side endpoints (what the code does)
-
-- Authentication
-  - `supabase.auth.signUp({ email, password })`
-  - `supabase.auth.signInWithPassword({ email, password })`
-  - `supabase.auth.signInWithOAuth({ provider: 'google' })`
-  - `supabase.auth.signOut()`
-- Profiles
-  - Fetch profile: `supabase.from('profiles').select('*').eq('id', userId).single()`
-  - Update: `supabase.from('profiles').update(...).eq('id', profile.id)`
-- Messaging & realtime
-  - Insert: `supabase.from('messages').insert({ sender_id, receiver_id, content, image_url })`
-  - Safety: `checkChatText` (local) → `moderateChatText` / `moderateChatImage` via `ai-proxy` before insert
-  - Query conversation: complex `.or()` filters using `and(...)` (see `src/pages/Chat.jsx`)
-  - Realtime subscribe: `supabase.channel('msgs-${id}').on('postgres_changes', {event:'INSERT', table:'messages'}, handler)`
-  - Chat images: `.storage.from('chat-images').upload(path, file)` then `getPublicUrl`; unsafe uploads deleted
-- Groups & group_members
-  - `.from('groups').select('*, group_members(count)')`
-  - join: `.from('group_members').insert({ group_id, user_id })`
-- Events & event_attendees
-  - `.from('events').select('*, event_attendees(count)')`
-  - rsvp: `.from('event_attendees').insert({ event_id, user_id })`
-- Moments (videos)
-  - list with author: `.from('videos').select('*, profiles(full_name, username, avatar_url)')`
-  - insert after upload: `.insert({ user_id, title, video_url, thumbnail_url, duration })`
-- Storage
-  - Avatars: `.storage.from('avatars').upload(path, file, { upsert: true })`
-  - Chat images: `.storage.from('chat-images').upload(`${userId}/${ts}.ext`, file)`
-  - Public URL: `.storage.from(...).getPublicUrl(path)`
-
-Because the app is client-first, ensure Row Level Security (RLS) policies on Supabase tables for production.
-
-## Realtime channels (used)
-
-- `msgs` — used in `Chat.jsx` to receive new message INSERT events and append them to the conversation
-- `unread` — used in `Navbar.jsx` to increment unread badge when a new message for the current user arrives
-
-## Upload flows (how avatars & videos work)
-
-- Avatar upload (`src/pages/Settings.jsx`):
-  - Browser → Supabase Storage `avatars` via `upload(filePath, file)` → `getPublicUrl()` → saved to `profiles.avatar_url`.
-
-- Video (Moments) upload (`src/pages/Moments.jsx`):
-  - Browser → Cloudinary unsigned upload (`VITE_CLOUDINARY_CLOUD_NAME` + `VITE_CLOUDINARY_UPLOAD_PRESET`) → Cloudinary returns `secure_url` → insert row into `videos` table with `video_url` and `thumbnail_url`.
-
-Security note: Cloudinary unsigned uploads are convenient for demos but not ideal for production — use signed uploads or proxy via a server.
-
-## AI helper
-
-- `src/lib/ai.js` exports `generateIcebreaker(context)` which calls OpenAI's Chat Completion endpoint (`model: 'gpt-4o-mini'`) with a lightweight system/user prompt. If `VITE_OPENAI_API_KEY` is missing the function returns a safe fallback string.
-
-Important: Do not expose OpenAI keys from the browser. Move AI calls to a server for production.
-
-## Environment variables (exact keys used in code)
-
-- VITE_SUPABASE_URL
-- VITE_SUPABASE_ANON_KEY
-- VITE_OPENAI_API_KEY (optional)
-- VITE_CLOUDINARY_CLOUD_NAME (optional — for moments)
-- VITE_CLOUDINARY_UPLOAD_PRESET (optional — for moments)
-
-Create a `.env` at the project root (Vite requires `VITE_` prefix for client exposure). Example `.env.example` content:
-
-```
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-VITE_OPENAI_API_KEY=
-VITE_CLOUDINARY_CLOUD_NAME=
-VITE_CLOUDINARY_UPLOAD_PRESET=
-```
-
-## How to run (local dev)
-
-1. Install dependencies
+## How to run locally
 
 ```bash
 npm install
-```
-
-2. Copy `.env.example` → `.env` and fill values
-
-3. Start dev server
-
-```bash
+cp .env.example .env   # then fill in values — see SETUP.md
 npm run dev
 ```
 
-4. Open the app in your browser (Vite's default port is 5173)
+## Testing & CI
+
+- Unit tests: Vitest + jsdom + Testing Library (`npm test`). Coverage focuses on pure logic and library modules: matching, chat safety filters, city parsing, video validation, auth-recovery redirect logic, account deletion, AI/moderation proxy calls, and social graph helpers (follow/block/report/notifications/hashtags).
+- `npm run lint` — ESLint (React hooks rules included)
+- `npm run build` — production Vite build
+- GitHub Actions CI (`.github/workflows/ci.yml`) runs lint → test → build on every push/PR to `main`.
+- **Known gap**: no render/integration tests for page components yet — only library-level logic is covered. Highest priority next: integration tests for the auth/onboarding guard flow and the chat moderation pipeline.
 
 ## Deployment
 
-- This project is ready for Vercel (includes `vercel.json`). Steps:
-  1. Push repo to Git provider
-  2. Create project on Vercel and import the repo
-  3. Add environment variables in Vercel project settings
-  4. Deploy — Vercel will run the build command
+Deployed on Vercel from `main`. See [SETUP.md](SETUP.md) for the full runbook: Supabase Auth URL config, Google OAuth setup, edge function secrets, and Vercel environment variables.
 
-Live deployment (production)
+## Troubleshooting
 
-You can link directly to the live site from your GitHub README. Current Vercel deployment URLs for this project:
-
-- https://the-prople-app-website-git-main-ayushanand27s-projects.vercel.app
-- https://the-prople-app-website-e06ff4q4c-ayushanand27s-projects.vercel.app
-
-Tip: pick one canonical domain (the first link above is likely the most recent production URL) and add it to your repository description so visitors can find it easily.
-
-## Security & production hardening
-
-- Enable Row Level Security (RLS) on all tables and write minimal policies allowing only intended actions (e.g., update own profile).
-- Move secret-requiring features (OpenAI calls, signed Cloudinary uploads) to serverless functions.
-- Validate and sanitize user input server-side if you add a backend.
-
-## Testing recommendations
-
-- Unit tests: Jest + React Testing Library
-- E2E: Playwright or Cypress for flows (signup → onboarding → upload → chat)
-- Add smoke tests for RLS policies using a script or CI step to verify privileges
-
-## Troubleshooting (common issues & fixes)
-
-- Auth not working: verify `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` match your Supabase project and auth settings (email templates, redirect URLs for OAuth).
-- Avatar upload failing: confirm `avatars` storage bucket exists and your storage policy allows uploads; check file size and content-type.
-- Cloudinary upload fails: verify `VITE_CLOUDINARY_CLOUD_NAME` and `VITE_CLOUDINARY_UPLOAD_PRESET` (unsigned) are correct.
-- Realtime events don't appear: check network console, browser blocks, or Supabase realtime add-on settings.
-
-## Contribution & next steps I can do for you
-
-- If you want, I can:
-  - create `.env.example` in the repo
-  - add `CONTRIBUTING.md` and `LICENSE` files
-  - scaffold basic Jest tests and a GitHub Actions CI workflow
-  - move AI calls to a Supabase Function or Vercel serverless endpoint
-
----
-
-If you want a tailored README section (e.g., a full DB migration SQL, RLS policy examples, or a diagram), tell me which and I will add it below or produce SQL/policy files and `.env.example` automatically.
+- **Auth not working**: verify `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` match your Supabase project, and that redirect URLs are configured in Supabase Auth settings.
+- **Avatar/listing upload failing**: confirm the relevant Storage bucket exists and its policy allows the upload; check file size/type.
+- **Moments upload fails**: confirm `VITE_CLOUDINARY_CLOUD_NAME` is set and the `cloudinary-sign` edge function has its Cloudinary secrets configured (see SETUP.md).
+- **AI icebreaker/moderation not working**: confirm `GROQ_API_KEY` (and optionally `OPENAI_API_KEY`) are set as `ai-proxy` edge function secrets — the client never calls AI providers directly.
+- **Realtime events don't appear**: check the browser console for websocket errors and confirm Realtime is enabled for the relevant tables in Supabase.

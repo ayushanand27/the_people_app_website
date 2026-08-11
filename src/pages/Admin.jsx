@@ -97,6 +97,8 @@ export default function Admin({ profile }) {
       supabase.from('reports').select('id, status'),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
     ])
+    const firstError = g.error || e.error || r.error || userCount.error
+    if (firstError) setError(firstError.message)
     setGroups(g.data || [])
     setEvents(e.data || [])
     const reps = r.data || []
@@ -135,7 +137,12 @@ export default function Admin({ profile }) {
 
   async function deleteGroup(id) {
     if (!confirm('Delete this group?')) return
-    await supabase.from('groups').delete().eq('id', id)
+    setError('')
+    const { error: groupError } = await supabase.from('groups').delete().eq('id', id)
+    if (groupError) {
+      setError(groupError.message)
+      return
+    }
     fetchAll()
   }
 

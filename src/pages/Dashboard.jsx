@@ -143,7 +143,7 @@ export default function Dashboard({ profile }) {
               boxShadow: '4px 4px 0 #1C1C3A',
             }}>
               <div style={{ fontWeight: 900 }}>No local listings yet</div>
-              <div style={{ color: '#aaa', fontSize: 14, marginTop: 4 }}>Verified shops coming soon</div>
+              <div style={{ color: '#aaa', fontSize: 14, marginTop: 4 }}>Check back soon!</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -313,7 +313,7 @@ export default function Dashboard({ profile }) {
             }}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>🎉</div>
               <div style={{ fontWeight: 900, fontSize: 16 }}>No events yet</div>
-              <div style={{ color: '#aaa', marginTop: 4, fontSize: 14 }}>Events coming soon!</div>
+              <div style={{ color: '#aaa', marginTop: 4, fontSize: 14 }}>Check back soon!</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

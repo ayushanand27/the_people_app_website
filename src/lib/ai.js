@@ -79,7 +79,7 @@ export async function moderateChatImage(imageUrl) {
     console.warn('[ai] image moderation unavailable:', error?.message || data?.error)
     return {
       flagged: true,
-      reason: 'Image safety check unavailable. Try text-only for now.',
+      reason: 'Image safety check is temporarily unavailable. Please try text-only.',
       unavailable: true,
     }
   }

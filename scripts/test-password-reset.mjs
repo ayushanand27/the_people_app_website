@@ -53,7 +53,7 @@ async function testResetEmail() {
   })
 
   const testEmail = `reset-test-${Date.now()}@example.com`
-  const redirectTo = 'https://the-prople-app-website.vercel.app/reset-password'
+  const redirectTo = 'https://the-people-app-website.vercel.app/reset-password'
 
   const { error } = await supabase.auth.resetPasswordForEmail(testEmail, { redirectTo })
 

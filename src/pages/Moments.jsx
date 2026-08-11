@@ -20,7 +20,8 @@ import {
   blockUser,
   getBlockedIds,
 } from '../lib/social'
-import { moderateUploadText } from '../lib/ai'
+import { moderateUploadText, moderateChatText } from '../lib/ai'
+import { checkChatText } from '../lib/chatSafety'
 import { track } from '../lib/analytics'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
@@ -385,7 +386,11 @@ export default function Moments({ profile }) {
 
   async function deleteVideo(videoId) {
     if (!confirm('Delete this moment?')) return
-    await supabase.from('videos').delete().eq('id', videoId).eq('user_id', profile.id)
+    const { error } = await supabase.from('videos').delete().eq('id', videoId).eq('user_id', profile.id)
+    if (error) {
+      setLoadError(reportSupabaseError(error, 'Delete moment') || 'Could not delete moment')
+      return
+    }
     setVideos(prev => prev.filter(v => v.id !== videoId))
   }
 
@@ -408,10 +413,23 @@ export default function Moments({ profile }) {
   }
 
   async function postComment() {
-    if (!commentText.trim() || !commentsOpen) return
+    const content = commentText.trim()
+    if (!content || !commentsOpen) return
+
+    const local = checkChatText(content)
+    if (!local.ok) {
+      setLoadError(local.reason)
+      return
+    }
+    const ai = await moderateChatText(content)
+    if (ai.flagged) {
+      setLoadError(ai.reason || 'This comment was blocked for safety.')
+      return
+    }
+
     const { data, error } = await supabase
       .from('video_comments')
-      .insert({ video_id: commentsOpen, user_id: profile.id, content: commentText.trim() })
+      .insert({ video_id: commentsOpen, user_id: profile.id, content })
       .select('*, profiles(full_name, username, avatar_url)')
       .single()
 
@@ -749,7 +767,7 @@ export default function Moments({ profile }) {
                 <div style={{ textAlign: 'center', color: '#999' }}>Loading...</div>
               ) : comments.length === 0 ? (
                 <div style={{ textAlign: 'center', color: '#999', padding: 20 }}>
-                  No comments yet. Run the SQL migration to enable comments.
+                  No comments yet. Be the first!
                 </div>
               ) : (
                 comments.map(c => (

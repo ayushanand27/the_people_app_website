@@ -9,7 +9,9 @@ function soft(error, context) {
 
 // ── HASHTAGS ──────────────────────────────────────────────────────────────────
 export function extractHashtags(text = '') {
-  const matches = text.match(/#[\p{L}0-9_]+/gu) || []
+  // \p{M} covers combining marks (e.g. Devanagari vowel signs like ु in #जयपुर) —
+  // without it, hashtags in Hindi/other Indic scripts get silently truncated.
+  const matches = text.match(/#[\p{L}\p{M}0-9_]+/gu) || []
   return [...new Set(matches.map(t => t.slice(1).toLowerCase()))].slice(0, 10)
 }
 

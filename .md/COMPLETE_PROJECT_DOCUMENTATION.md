@@ -21,8 +21,8 @@
 
 - **Purpose**: Help users discover local people, groups, and events based on shared interests.
 - **Status**: Active prototype, deployed and functional.
-- **Live URL**: https://the-prople-app-website-git-main-ayushanand27s-projects.vercel.app
-- **Repo**: https://github.com/ayushanand27/the_prople_app_website
+- **Live URL**: https://the-people-app-website.vercel.app
+- **Repo**: https://github.com/ayushanand27/the_people_app_website
 
 **Core Features**:
 - Email & Google OAuth authentication
@@ -749,7 +749,7 @@ VITE_SUPABASE_ANON_KEY
 VITE_CLOUDINARY_CLOUD_NAME
 VITE_CLOUDINARY_UPLOAD_PRESET
 Live URLs
-https://the-prople-app-website-git-main-ayushanand27s-projects.vercel.app
+https://the-people-app-website.vercel.app
 7. Summary
 This document covers:
 
