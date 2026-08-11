@@ -83,11 +83,11 @@ npm run dev
 
 ## Testing & CI
 
-- Unit tests: Vitest + jsdom + Testing Library (`npm test`). Coverage focuses on pure logic and library modules: matching, chat safety filters, city parsing, video validation, auth-recovery redirect logic, account deletion, AI/moderation proxy calls, and social graph helpers (follow/block/report/notifications/hashtags).
+- Unit tests: Vitest + jsdom + Testing Library (`npm test`). Coverage includes pure logic/library modules (matching, chat safety filters, city parsing, video validation, auth-recovery redirect logic, account deletion, AI/moderation proxy calls, social graph helpers) plus an integration suite (`src/App.test.jsx`) that renders the real `App` component with a mocked Supabase client and exercises the auth/onboarding/admin/banned-user/password-reset routing guards end-to-end.
 - `npm run lint` — ESLint (React hooks rules included)
 - `npm run build` — production Vite build
 - GitHub Actions CI (`.github/workflows/ci.yml`) runs lint → test → build on every push/PR to `main`.
-- **Known gap**: no render/integration tests for page components yet — only library-level logic is covered. Highest priority next: integration tests for the auth/onboarding guard flow and the chat moderation pipeline.
+- **Known gap**: individual pages (Chat, Moments, Dashboard, etc.) don't have their own render tests yet — only the top-level routing/auth-guard layer and library logic are covered. A full E2E suite (Playwright against a real browser) would need a dedicated test Supabase project to avoid exercising production data, which is a separate infra decision.
 
 ## Deployment
 

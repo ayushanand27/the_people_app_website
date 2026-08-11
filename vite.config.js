@@ -4,6 +4,13 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // Vitest bundles its own internal Vite/esbuild version, which doesn't always
+  // inherit the automatic JSX runtime that @vitejs/plugin-react configures for
+  // the real app build — without this, .jsx test files see "React is not
+  // defined" even though `npm run build`/`dev` are unaffected.
+  esbuild: {
+    jsx: 'automatic',
+  },
   plugins: [
     react(),
     tailwindcss(),
