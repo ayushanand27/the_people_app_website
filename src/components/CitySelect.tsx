@@ -2,13 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { LAUNCH_CITIES } from '../lib/cities'
 import { ChevronDown } from 'lucide-react'
 
-export default function CitySelect({ value, onChange, compact = false, label }) {
+interface CitySelectProps {
+  value?: string
+  onChange: (city: string) => void
+  compact?: boolean
+  label?: string
+}
+
+export default function CitySelect({ value, onChange, compact = false, label }: CitySelectProps) {
   const [open, setOpen] = useState(false)
-  const rootRef = useRef(null)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    function onDoc(e) {
-      if (!rootRef.current?.contains(e.target)) setOpen(false)
+    function onDoc(e: MouseEvent) {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)

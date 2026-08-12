@@ -10,15 +10,20 @@ import {
   fetchVerifiedListings,
 } from '../lib/localListings'
 import InlineError from '../components/InlineError'
+import type { Profile, Listing } from '../types'
 
 const BG = ['#FFB3CC', '#B8F0B8', '#B3E5FC', '#FFD699', '#E8D5FF', '#FFE566']
 
-export default function Local({ profile }) {
+interface LocalProps {
+  profile?: Profile | null
+}
+
+export default function Local({ profile }: LocalProps) {
   const navigate = useNavigate()
   const browseCity = useBrowseCity(profile?.city)
   const [category, setCategory] = useState('all')
   const [search, setSearch] = useState('')
-  const [listings, setListings] = useState([])
+  const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
@@ -34,7 +39,7 @@ export default function Local({ profile }) {
       setListings(data)
     } catch (err) {
       setListings([])
-      setLoadError(err?.message || 'Failed to load listings')
+      setLoadError(err instanceof Error ? err.message : 'Failed to load listings')
     } finally {
       setLoading(false)
     }
@@ -172,7 +177,7 @@ export default function Local({ profile }) {
   )
 }
 
-function chipStyle(active) {
+function chipStyle(active: boolean) {
   return {
     flexShrink: 0,
     padding: '8px 14px',

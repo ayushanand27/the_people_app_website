@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, type Dispatch, type SetStateAction, type ChangeEvent, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
@@ -8,6 +8,7 @@ import { LogOut, Save, Camera, Trash2 } from 'lucide-react'
 import { deleteAccount } from '../lib/deleteAccount'
 import { ADMIN_EMAIL, ADMIN_WHATSAPP, ADMIN_WHATSAPP_ALT } from '../lib/config'
 import { whatsappUrl } from '../lib/contact'
+import type { Profile } from '../types'
 
 const INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
@@ -16,16 +17,21 @@ const INTERESTS = [
   'Chess', 'Philosophy', 'Anime', 'Podcasts'
 ]
 
-export default function Settings({ profile, setProfile }) {
+interface SettingsProps {
+  profile?: Profile | null
+  setProfile: Dispatch<SetStateAction<Profile | null>>
+}
+
+export default function Settings({ profile, setProfile }: SettingsProps) {
   const navigate  = useNavigate()
-  const fileRef   = useRef(null)
+  const fileRef   = useRef<HTMLInputElement>(null)
   const initialCity = initCityState(profile?.city)
 
   const [fullName,    setFullName]    = useState(profile?.full_name  || '')
   const [bio,         setBio]         = useState(profile?.bio        || '')
   const [city,        setCity]        = useState(initialCity.city)
   const [customCity,  setCustomCity]  = useState(initialCity.customCity)
-  const [interests,   setInterests]   = useState(profile?.interests  || [])
+  const [interests,   setInterests]   = useState<string[]>(profile?.interests  || [])
   const [avatarUrl,   setAvatarUrl]   = useState(profile?.avatar_url || '')
   const [loading,     setLoading]     = useState(false)
   const [uploading,   setUploading]   = useState(false)
@@ -34,14 +40,14 @@ export default function Settings({ profile, setProfile }) {
   const [deleting,    setDeleting]    = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState('')
 
-  function toggleInterest(x) {
+  function toggleInterest(x: string) {
     setInterests(prev =>
       prev.includes(x) ? prev.filter(i => i !== x)
       : prev.length < 5 ? [...prev, x] : prev
     )
   }
 
-  async function handlePhotoUpload(e) {
+  async function handlePhotoUpload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -95,7 +101,7 @@ export default function Settings({ profile, setProfile }) {
   }
 
   async function handleSave() {
-    if (!fullName || !isCityValid(city, customCity) || interests.length < 3) {
+    if (!profile || !fullName || !isCityValid(city, customCity) || interests.length < 3) {
       setError('Fill all fields, enter your city, and pick at least 3 interests')
       return
     }
@@ -138,7 +144,7 @@ export default function Settings({ profile, setProfile }) {
     navigate('/')
   }
 
-  const section = (title, children) => (
+  const section = (title: string, children: ReactNode) => (
     <div style={{
       background: 'white', border: '3px solid #1C1C3A',
       borderRadius: 20, padding: 20,
@@ -289,7 +295,7 @@ export default function Settings({ profile, setProfile }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <a
-              href={whatsappUrl(ADMIN_WHATSAPP, 'Hi, I want to list my business on The People App.')}
+              href={whatsappUrl(ADMIN_WHATSAPP, 'Hi, I want to list my business on The People App.') ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -303,7 +309,7 @@ export default function Settings({ profile, setProfile }) {
               WhatsApp us →
             </a>
             <a
-              href={whatsappUrl(ADMIN_WHATSAPP_ALT, 'Hi, I want to list my business on The People App.')}
+              href={whatsappUrl(ADMIN_WHATSAPP_ALT, 'Hi, I want to list my business on The People App.') ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               style={{

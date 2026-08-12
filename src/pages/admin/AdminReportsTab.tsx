@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import {
   fetchAdminReports,
   updateReportStatus,
@@ -9,23 +9,24 @@ import {
   approveVideo,
   targetSummary,
 } from '../../lib/adminReports'
+import type { AdminReport, PendingVideo } from '../../types'
 
-const STATUS_FILTERS = ['all', 'pending', 'resolved', 'dismissed']
+const STATUS_FILTERS = ['all', 'pending', 'resolved', 'dismissed'] as const
 
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   pending: { bg: '#FFD699', border: '#FF9F1C', text: '#7A4400' },
   resolved: { bg: '#B8F0B8', border: '#4CAF82', text: '#1C6B3A' },
   dismissed: { bg: '#eee', border: '#999', text: '#555' },
 }
 
-function cardStyle(bg = 'white') {
+function cardStyle(bg = 'white'): CSSProperties {
   return {
     background: bg, border: '3px solid #1C1C3A', borderRadius: 16,
     padding: '14px 18px', boxShadow: '3px 3px 0 #1C1C3A',
   }
 }
 
-function actionBtn(bg, color = 'white') {
+function actionBtn(bg: string, color = 'white'): CSSProperties {
   return {
     background: bg, color, border: '2.5px solid #1C1C3A', borderRadius: 10,
     padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer',
@@ -33,12 +34,17 @@ function actionBtn(bg, color = 'white') {
   }
 }
 
-export default function AdminReportsTab({ onSuccess, onError }) {
-  const [reports, setReports] = useState([])
-  const [pendingVideos, setPendingVideos] = useState([])
+interface AdminReportsTabProps {
+  onSuccess?: (msg: string) => void
+  onError?: (msg: string) => void
+}
+
+export default function AdminReportsTab({ onSuccess, onError }: AdminReportsTabProps) {
+  const [reports, setReports] = useState<AdminReport[]>([])
+  const [pendingVideos, setPendingVideos] = useState<PendingVideo[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
-  const [busyId, setBusyId] = useState(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -47,7 +53,7 @@ export default function AdminReportsTab({ onSuccess, onError }) {
       setReports(reps)
       setPendingVideos(vids)
     } catch (err) {
-      onError?.(err.message || 'Failed to load reports')
+      onError?.(err instanceof Error ? err.message : 'Failed to load reports')
     } finally {
       setLoading(false)
     }
@@ -59,20 +65,20 @@ export default function AdminReportsTab({ onSuccess, onError }) {
     ? reports
     : reports.filter(r => r.status === filter)
 
-  async function dismissReport(report) {
+  async function dismissReport(report: AdminReport) {
     setBusyId(report.id)
     try {
       await updateReportStatus(report.id, 'dismissed')
       onSuccess?.('Report dismissed')
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not dismiss report')
     } finally {
       setBusyId(null)
     }
   }
 
-  async function resolveReport(report) {
+  async function resolveReport(report: AdminReport) {
     setBusyId(report.id)
     try {
       let deleteContent = false
@@ -92,15 +98,16 @@ export default function AdminReportsTab({ onSuccess, onError }) {
       onSuccess?.(deleteContent ? 'Resolved and content deleted' : 'Report resolved')
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not resolve report')
     } finally {
       setBusyId(null)
     }
   }
 
-  async function banReportedUser(report) {
+  async function banReportedUser(report: AdminReport) {
     if (report.target_type !== 'user') return
-    if (!confirm(`Ban @${report.target?.username || 'this user'}? They will be logged out immediately.`)) return
+    const target = report.target as { username?: string } | undefined
+    if (!confirm(`Ban @${target?.username || 'this user'}? They will be logged out immediately.`)) return
 
     setBusyId(report.id)
     try {
@@ -109,20 +116,20 @@ export default function AdminReportsTab({ onSuccess, onError }) {
       onSuccess?.('User banned and report resolved')
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not ban user')
     } finally {
       setBusyId(null)
     }
   }
 
-  async function approvePendingVideo(video) {
+  async function approvePendingVideo(video: PendingVideo) {
     setBusyId(video.id)
     try {
       await approveVideo(video.id)
       onSuccess?.('Video approved and published')
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not approve video')
     } finally {
       setBusyId(null)
     }
@@ -166,7 +173,7 @@ export default function AdminReportsTab({ onSuccess, onError }) {
                         onSuccess?.('Video deleted')
                         await load()
                       } catch (err) {
-                        onError?.(err.message)
+                        onError?.(err instanceof Error ? err.message : 'Could not delete video')
                       } finally {
                         setBusyId(null)
                       }
@@ -240,7 +247,7 @@ export default function AdminReportsTab({ onSuccess, onError }) {
                     <div style={{ color: '#aaa', fontSize: 11 }}>
                       {new Date(r.created_at).toLocaleString()}
                     </div>
-                    {r.target_type === 'user' && r.target?.is_banned && (
+                    {r.target_type === 'user' && Boolean(r.target?.is_banned) && (
                       <div style={{ color: '#CC0000', fontWeight: 700, fontSize: 12, marginTop: 6 }}>
                         User already banned
                       </div>

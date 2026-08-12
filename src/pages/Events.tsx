@@ -4,13 +4,18 @@ import Navbar from '../components/Navbar'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 import { useBrowseCity } from '../hooks/useBrowseCity'
+import type { Profile, EventItem } from '../types'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 
-export default function Events({ profile }) {
+interface EventsProps {
+  profile?: Profile | null
+}
+
+export default function Events({ profile }: EventsProps) {
   const browseCity = useBrowseCity(profile?.city)
-  const [events,  setEvents]  = useState([])
-  const [rsvpd,   setRsvpd]   = useState([])
+  const [events,  setEvents]  = useState<EventItem[]>([])
+  const [rsvpd,   setRsvpd]   = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [tab,     setTab]     = useState('upcoming')
@@ -36,11 +41,13 @@ export default function Events({ profile }) {
   }
 
   async function fetchRsvpd() {
+    if (!profile) return
     const { data } = await supabase.from('event_attendees').select('event_id').eq('user_id', profile.id)
     setRsvpd((data || []).map(d => d.event_id))
   }
 
-  async function rsvp(id) {
+  async function rsvp(id: string) {
+    if (!profile) return
     const { error } = await supabase.from('event_attendees').insert({ event_id: id, user_id: profile.id })
     if (error) {
       setLoadError(reportSupabaseError(error, 'RSVP') || 'Could not RSVP')
@@ -54,7 +61,8 @@ export default function Events({ profile }) {
     }))
   }
 
-  async function cancel(id) {
+  async function cancel(id: string) {
+    if (!profile) return
     const { error } = await supabase.from('event_attendees').delete().eq('event_id', id).eq('user_id', profile.id)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Cancel RSVP') || 'Could not cancel RSVP')
@@ -112,7 +120,7 @@ export default function Events({ profile }) {
             {events.map((ev, i) => {
               const isRsvpd  = rsvpd.includes(ev.id)
               const count    = ev.event_attendees?.[0]?.count || 0
-              const isFull   = count >= ev.max_attendees
+              const isFull   = count >= (ev.max_attendees ?? Infinity)
               const isPast   = new Date(ev.date) < new Date()
               return (
                 <div key={ev.id} style={{

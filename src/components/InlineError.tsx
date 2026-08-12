@@ -1,4 +1,9 @@
-export default function InlineError({ message, onRetry }) {
+interface InlineErrorProps {
+  message?: string | null
+  onRetry?: () => void
+}
+
+export default function InlineError({ message, onRetry }: InlineErrorProps) {
   if (!message) return null
   return (
     <div style={{

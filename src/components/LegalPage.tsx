@@ -1,6 +1,12 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-export default function LegalPage({ title, children }) {
+interface LegalPageProps {
+  title: string
+  children: ReactNode
+}
+
+export default function LegalPage({ title, children }: LegalPageProps) {
   return (
     <div style={{ minHeight: '100vh', background: '#FFF0F5', padding: '24px 16px 48px' }}>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>

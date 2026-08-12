@@ -8,6 +8,11 @@ import { interestMatchScore, commonInterests, sortByCityThenMatch } from '../lib
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 import { getBlockedIds } from '../lib/social'
+import type { Profile } from '../types'
+
+interface DiscoverProps {
+  profile?: Profile | null
+}
 
 const ALL_INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
@@ -21,9 +26,9 @@ const PAGE_SIZE = 30
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
 
-export default function Discover({ profile }) {
+export default function Discover({ profile }: DiscoverProps) {
   const navigate = useNavigate()
-  const [people,         setPeople]         = useState([])
+  const [people,         setPeople]         = useState<Profile[]>([])
   const [loading,        setLoading]        = useState(true)
   const [search,         setSearch]         = useState('')
   const [selectedInterest, setSelectedInterest] = useState('')
@@ -33,7 +38,7 @@ export default function Discover({ profile }) {
   const [hasMore,        setHasMore]         = useState(true)
   const [loadingMore,    setLoadingMore]     = useState(false)
   const [page,           setPage]            = useState(0)
-  const [blockedIds,     setBlockedIds]      = useState([])
+  const [blockedIds,     setBlockedIds]      = useState<string[]>([])
 
   useEffect(() => {
     if (!profile?.id) return
@@ -43,6 +48,7 @@ export default function Discover({ profile }) {
   useEffect(() => { if (profile) fetchPeople(false) }, [profile, browseCity, blockedIds])
 
   async function fetchPeople(append = false) {
+    if (!profile) return
     if (append) setLoadingMore(true)
     else {
       setLoading(true)
@@ -54,7 +60,7 @@ export default function Discover({ profile }) {
     const from = nextPage * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
 
-    let query = supabase.from('profiles')
+    const query = supabase.from('profiles')
       .select('id,full_name,username,city,interests,avatar_url,bio')
       .neq('id', profile.id)
       .eq('onboarding_complete', true)

@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { getBrowseCity } from '../lib/cities'
 
 /** Active browse city from navbar dropdown; syncs via browse-city-changed event */
-export function useBrowseCity(profileCity = '') {
+export function useBrowseCity(profileCity = ''): string {
   const [browseCity, setBrowseCity] = useState(() => getBrowseCity(profileCity))
 
   useEffect(() => {
     setBrowseCity(getBrowseCity(profileCity))
-    function onCityChange(e) {
-      setBrowseCity(e.detail || getBrowseCity(profileCity))
+    function onCityChange(e: Event) {
+      setBrowseCity((e as CustomEvent<string>).detail || getBrowseCity(profileCity))
     }
     window.addEventListener('browse-city-changed', onCityChange)
     return () => window.removeEventListener('browse-city-changed', onCityChange)

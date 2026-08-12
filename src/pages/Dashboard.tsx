@@ -8,21 +8,27 @@ import { sortByCityThenMatch, interestMatchScore, commonInterests } from '../lib
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 import { useBrowseCity } from '../hooks/useBrowseCity'
+import type { Profile, Group, EventItem, Listing } from '../types'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
 
-export default function Dashboard({ profile }) {
+interface DashboardProps {
+  profile?: Profile | null
+}
+
+export default function Dashboard({ profile }: DashboardProps) {
   const navigate = useNavigate()
-  const [matches, setMatches] = useState([])
-  const [groups,  setGroups]  = useState([])
-  const [events,  setEvents]  = useState([])
-  const [localPreview, setLocalPreview] = useState([])
+  const [matches, setMatches] = useState<Profile[]>([])
+  const [groups,  setGroups]  = useState<Group[]>([])
+  const [events,  setEvents]  = useState<EventItem[]>([])
+  const [localPreview, setLocalPreview] = useState<Listing[]>([])
   const browseCity = useBrowseCity(profile?.city)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
-  async function loadDashboard(city) {
+  async function loadDashboard(city?: string) {
+    if (!profile) return
     setLoadError('')
     setLoading(true)
     const [matchesRes, groupsRes, eventsRes, localRes] = await Promise.all([
@@ -64,7 +70,7 @@ export default function Dashboard({ profile }) {
     if (profile) loadDashboard(browseCity)
   }, [profile, browseCity])
 
-  function score(other) {
+  function score(other: Profile) {
     return interestMatchScore(profile?.interests, other?.interests)
   }
 
@@ -203,7 +209,7 @@ export default function Dashboard({ profile }) {
                   <button
                     key={m.id}
                     onClick={() => {
-                      track('match_view', { user_id: profile.id, target_user_id: m.id })
+                      track('match_view', { user_id: profile?.id, target_user_id: m.id })
                       navigate(`/profile/${m.id}`)
                     }}
                     style={{

@@ -1,11 +1,20 @@
+import type { CSSProperties } from 'react'
 import { CITIES } from '../lib/cities'
 
 const BG = ['#FFB3CC', '#B8F0B8', '#B3E5FC', '#FFD699', '#E8D5FF', '#FFE566']
 
-const inputStyle = {
+const inputStyle: CSSProperties = {
   width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
   padding: '12px 16px', fontSize: 15, fontWeight: 600,
   background: '#FFF0F5', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+}
+
+interface CityPickerProps {
+  city?: string
+  customCity?: string
+  onCityChange: (city: string) => void
+  onCustomCityChange: (city: string) => void
+  layout?: 'grid' | 'compact' | 'select'
 }
 
 export default function CityPicker({
@@ -14,7 +23,7 @@ export default function CityPicker({
   onCityChange,
   onCustomCityChange,
   layout = 'grid',
-}) {
+}: CityPickerProps) {
   if (layout === 'select') {
     return (
       <div>

@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactElement } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import type { Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { identifyUser } from './lib/analytics'
 import {
@@ -7,6 +8,7 @@ import {
   isGoogleOAuthPending,
   clearGoogleOAuthPending,
 } from './lib/authRecovery'
+import type { Profile } from './types'
 
 import Auth from './pages/Auth'
 import Landing from './pages/Landing'
@@ -50,8 +52,8 @@ export default function App() {
 }
 
 function MainApp() {
-  const [session, setSession] = useState(null)
-  const [profile, setProfile] = useState(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [oauthExchanging, setOauthExchanging] = useState(false)
   const [profileError, setProfileError] = useState('')
@@ -82,7 +84,7 @@ function MainApp() {
     handleOAuthReturn()
   }, [])
 
-  async function fetchProfile(userId) {
+  async function fetchProfile(userId: string) {
     setProfileError('')
     const { data, error } = await supabase
       .from('profiles')
@@ -110,7 +112,7 @@ function MainApp() {
   }
 
   useEffect(() => {
-    function handleAuthEvent(_event, s) {
+    function handleAuthEvent(_event: AuthChangeEvent, s: Session | null) {
       setSession(s)
       if (s) fetchProfile(s.user.id)
       else {
@@ -165,7 +167,7 @@ function MainApp() {
   }
 
   const needsOnboarding = Boolean(session && (!profile || !profile.onboarding_complete))
-  const authed = (el) => {
+  const authed = (el: ReactElement) => {
     if (!session) return <Navigate to="/auth" />
     if (needsOnboarding) return <Navigate to="/onboarding" />
     return el

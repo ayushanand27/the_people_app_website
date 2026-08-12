@@ -7,23 +7,29 @@ import { isFollowing, followUser, unfollowUser, getBlockedIds } from '../lib/soc
 import { track } from '../lib/analytics'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
+import type { Profile as ProfileType } from '../types'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 
-export default function Profile({ profile }) {
+interface ProfilePageProps {
+  profile?: ProfileType | null
+}
+
+export default function Profile({ profile }: ProfilePageProps) {
   const navigate     = useNavigate()
   const { id }       = useParams()
   const isOwn        = id === profile?.id
-  const [user, setUser]       = useState(null)
+  const [user, setUser]       = useState<ProfileType | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [following, setFollowing] = useState(false)
   const [followBusy, setFollowBusy] = useState(false)
 
   const fetchUser = useCallback(async () => {
+    if (!id) return
     setLoading(true)
     setLoadError('')
-    if (profile?.id && id && id !== profile.id) {
+    if (profile?.id && id !== profile.id) {
       const blockedIds = await getBlockedIds(profile.id)
       if (blockedIds.includes(id)) {
         setUser(null)
@@ -41,7 +47,7 @@ export default function Profile({ profile }) {
     }
     setUser(data)
     setLoading(false)
-    if (profile?.id && id && id !== profile.id) {
+    if (profile?.id && id !== profile.id) {
       setFollowing(await isFollowing(profile.id, id))
     }
   }, [id, profile?.id])
@@ -49,23 +55,23 @@ export default function Profile({ profile }) {
   useEffect(() => { if (id) fetchUser() }, [id, fetchUser])
 
   async function toggleFollow() {
-    if (followBusy || !user) return
+    if (followBusy || !user || !profile) return
     setFollowBusy(true)
     const next = !following
     setFollowing(next)
-    setUser(u => ({ ...u, follower_count: Math.max((u.follower_count || 0) + (next ? 1 : -1), 0) }))
+    setUser(u => (u ? { ...u, follower_count: Math.max((u.follower_count || 0) + (next ? 1 : -1), 0) } : u))
     const ok = next
       ? await followUser(profile.id, user.id)
       : await unfollowUser(profile.id, user.id)
     if (ok && next) track('follow', { user_id: profile.id, target_user_id: user.id })
     if (!ok) {
       setFollowing(!next)
-      setUser(u => ({ ...u, follower_count: Math.max((u.follower_count || 0) + (next ? -1 : 1), 0) }))
+      setUser(u => (u ? { ...u, follower_count: Math.max((u.follower_count || 0) + (next ? -1 : 1), 0) } : u))
     }
     setFollowBusy(false)
   }
 
-  function common() {
+  function common(): string[] {
     if (!profile?.interests || !user?.interests) return []
     return profile.interests.filter(i => user.interests?.includes(i))
   }

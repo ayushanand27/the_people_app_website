@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { clearPasswordResetPending, isPasswordResetPending } from '../lib/authRecovery'
 
-const inputStyle = {
+const inputStyle: CSSProperties = {
   width: '100%', border: '3px solid #1C1C3A',
   borderRadius: 50, padding: '14px 20px',
   fontSize: 15, fontWeight: 600,
@@ -15,8 +15,10 @@ const PKCE_ERROR_HINT =
   'Open the reset link in the same browser where you tapped "Send reset link". ' +
   'Or request a new email — the latest template works in any browser.'
 
+type ResetPhase = 'loading' | 'form' | 'error' | 'success'
+
 export default function ResetPassword() {
-  const [phase, setPhase] = useState('loading')
+  const [phase, setPhase] = useState<ResetPhase>('loading')
   const [message, setMessage] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -30,7 +32,7 @@ export default function ResetPassword() {
     const showForm = () => {
       if (!cancelled) setPhase('form')
     }
-    const showError = (msg) => {
+    const showError = (msg: string) => {
       if (!cancelled) {
         setMessage(msg)
         setPhase('error')
@@ -96,7 +98,7 @@ export default function ResetPassword() {
     }
   }, [])
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (newPassword.length < 6) {
       setMessage('Password must be at least 6 characters')

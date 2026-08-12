@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { NotificationItem } from '../types'
 
 // All helpers fail soft: if a table/policy is missing (new Supabase not set up
 // yet), they log and return a safe default instead of throwing.
@@ -107,7 +108,7 @@ export async function createNotification({ userId, actorId, type, entityId = nul
   soft(error, 'createNotification')
 }
 
-export async function getNotifications(userId?: string | null, limit = 50) {
+export async function getNotifications(userId?: string | null, limit = 50): Promise<NotificationItem[]> {
   if (!userId) return []
   const { data, error } = await supabase
     .from('notifications')
@@ -116,7 +117,7 @@ export async function getNotifications(userId?: string | null, limit = 50) {
     .order('created_at', { ascending: false })
     .limit(limit)
   soft(error, 'getNotifications')
-  return data || []
+  return (data || []) as unknown as NotificationItem[]
 }
 
 export async function getUnreadNotificationCount(userId?: string | null): Promise<number> {

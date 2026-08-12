@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ChangeEvent, type FormEvent } from 'react'
 import {
   LISTING_CATEGORIES,
   categoryLabel,
@@ -12,15 +12,16 @@ import {
   uploadListingImage,
 } from '../../lib/localListings'
 import { LAUNCH_CITIES } from '../../lib/cities'
+import type { Profile, Listing, ListingUpdateRequest } from '../../types'
 
-function cardStyle(bg = 'white') {
+function cardStyle(bg = 'white'): CSSProperties {
   return {
     background: bg, border: '3px solid #1C1C3A', borderRadius: 16,
     padding: '14px 18px', boxShadow: '3px 3px 0 #1C1C3A',
   }
 }
 
-function btn(bg, color = 'white') {
+function btn(bg: string, color = 'white'): CSSProperties {
   return {
     background: bg, color, border: '2.5px solid #1C1C3A', borderRadius: 10,
     padding: '8px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer',
@@ -28,20 +29,26 @@ function btn(bg, color = 'white') {
   }
 }
 
-const inputStyle = {
+const inputStyle: CSSProperties = {
   width: '100%', border: '3px solid #1C1C3A', borderRadius: 12,
   padding: '10px 14px', fontSize: 14, fontWeight: 600,
   fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10,
 }
 
-export default function AdminListingsTab({ profile, onSuccess, onError }) {
-  const fileRef = useRef(null)
-  const [listings, setListings] = useState([])
-  const [updates, setUpdates] = useState([])
+interface AdminListingsTabProps {
+  profile?: Profile | null
+  onSuccess?: (msg: string) => void
+  onError?: (msg: string) => void
+}
+
+export default function AdminListingsTab({ profile, onSuccess, onError }: AdminListingsTabProps) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [listings, setListings] = useState<Listing[]>([])
+  const [updates, setUpdates] = useState<ListingUpdateRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [busyId, setBusyId] = useState(null)
-  const [images, setImages] = useState([])
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [images, setImages] = useState<string[]>([])
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -61,7 +68,7 @@ export default function AdminListingsTab({ profile, onSuccess, onError }) {
       setListings(list)
       setUpdates(reqs)
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Failed to load listings')
     } finally {
       setLoading(false)
     }
@@ -69,27 +76,28 @@ export default function AdminListingsTab({ profile, onSuccess, onError }) {
 
   useEffect(() => { load() }, [load])
 
-  async function handleImagePick(e) {
+  async function handleImagePick(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     setSaving(true)
     try {
-      const urls = []
+      const urls: string[] = []
       for (const file of files) {
         urls.push(await uploadListingImage(file))
       }
       setImages(prev => [...prev, ...urls])
       onSuccess?.('Images uploaded')
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not upload images')
     } finally {
       setSaving(false)
       if (fileRef.current) fileRef.current.value = ''
     }
   }
 
-  async function handleCreate(e) {
+  async function handleCreate(e: FormEvent) {
     e.preventDefault()
+    if (!profile) return
     if (!title.trim()) {
       onError?.('Title is required')
       return
@@ -118,26 +126,27 @@ export default function AdminListingsTab({ profile, onSuccess, onError }) {
       setImages([])
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not create listing')
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleVerify(id) {
+  async function handleVerify(id: string) {
+    if (!profile) return
     setBusyId(id)
     try {
       await verifyListing(id, profile.id)
       onSuccess?.('Listing verified')
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not verify listing')
     } finally {
       setBusyId(null)
     }
   }
 
-  async function handleArchive(id) {
+  async function handleArchive(id: string) {
     if (!confirm('Archive this listing?')) return
     setBusyId(id)
     try {
@@ -145,33 +154,35 @@ export default function AdminListingsTab({ profile, onSuccess, onError }) {
       onSuccess?.('Listing archived')
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not archive listing')
     } finally {
       setBusyId(null)
     }
   }
 
-  async function handleApproveUpdate(req) {
+  async function handleApproveUpdate(req: ListingUpdateRequest) {
+    if (!profile) return
     setBusyId(req.id)
     try {
       await approveUpdateRequest(req, profile.id)
       onSuccess?.('Update approved')
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not approve update')
     } finally {
       setBusyId(null)
     }
   }
 
-  async function handleRejectUpdate(id) {
+  async function handleRejectUpdate(id: string) {
+    if (!profile) return
     setBusyId(id)
     try {
       await rejectUpdateRequest(id, profile.id)
       onSuccess?.('Update rejected')
       await load()
     } catch (err) {
-      onError?.(err.message)
+      onError?.(err instanceof Error ? err.message : 'Could not reject update')
     } finally {
       setBusyId(null)
     }

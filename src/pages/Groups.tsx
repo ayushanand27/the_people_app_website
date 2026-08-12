@@ -4,14 +4,18 @@ import Navbar from '../components/Navbar'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 import { useBrowseCity } from '../hooks/useBrowseCity'
+import type { Profile, Group } from '../types'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
-const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
 
-export default function Groups({ profile }) {
+interface GroupsProps {
+  profile?: Profile | null
+}
+
+export default function Groups({ profile }: GroupsProps) {
   const browseCity = useBrowseCity(profile?.city)
-  const [groups,  setGroups]  = useState([])
-  const [joined,  setJoined]  = useState([])
+  const [groups,  setGroups]  = useState<Group[]>([])
+  const [joined,  setJoined]  = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [tab,     setTab]     = useState('all')
@@ -34,12 +38,14 @@ export default function Groups({ profile }) {
   }
 
   async function fetchJoined() {
+    if (!profile) return
     const { data } = await supabase.from('group_members')
       .select('group_id').eq('user_id', profile.id)
     setJoined((data || []).map(d => d.group_id))
   }
 
-  async function joinGroup(id) {
+  async function joinGroup(id: string) {
+    if (!profile) return
     const { error } = await supabase.from('group_members').insert({ group_id: id, user_id: profile.id })
     if (error) {
       setLoadError(reportSupabaseError(error, 'Join group') || 'Could not join group')
@@ -53,7 +59,8 @@ export default function Groups({ profile }) {
     }))
   }
 
-  async function leaveGroup(id) {
+  async function leaveGroup(id: string) {
+    if (!profile) return
     const { error } = await supabase.from('group_members').delete().eq('group_id', id).eq('user_id', profile.id)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Leave group') || 'Could not leave group')

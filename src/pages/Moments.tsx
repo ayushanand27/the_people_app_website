@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type ReactNode, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Heart, MessageCircle, Upload, X, Volume2, VolumeX, Trash2, Share2, Bookmark, Flag, Ban } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -26,20 +26,27 @@ import { track } from '../lib/analytics'
 import InlineError from '../components/InlineError'
 import { reportSupabaseError } from '../lib/supabaseError'
 import { useBrowseCity } from '../hooks/useBrowseCity'
+import type { Profile, Video, VideoComment } from '../types'
 
 const PAGE_SIZE = 10
 
-function formatDuration(seconds) {
+function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export default function Moments({ profile }) {
+type FeedTab = 'foryou' | 'following' | 'saved'
+
+interface MomentsProps {
+  profile?: Profile | null
+}
+
+export default function Moments({ profile }: MomentsProps) {
   const navigate = useNavigate()
   const browseCity = useBrowseCity(profile?.city)
   const [searchParams, setSearchParams] = useSearchParams()
-  const [videos, setVideos] = useState([])
+  const [videos, setVideos] = useState<Video[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [loadingMore, setLoadingMore] = useState(false)
@@ -47,31 +54,31 @@ export default function Moments({ profile }) {
   const [uploading, setUploading] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [activeIdx, setActiveIdx] = useState(0)
-  const [liked, setLiked] = useState([])
+  const [liked, setLiked] = useState<string[]>([])
   const [muted, setMuted] = useState(true)
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
   const [progress, setProgress] = useState(0)
   const [uploadError, setUploadError] = useState('')
-  const [commentsOpen, setCommentsOpen] = useState(null)
-  const [comments, setComments] = useState([])
+  const [commentsOpen, setCommentsOpen] = useState<string | null>(null)
+  const [comments, setComments] = useState<VideoComment[]>([])
   const [commentText, setCommentText] = useState('')
   const [commentsLoading, setCommentsLoading] = useState(false)
-  const [feedTab, setFeedTab] = useState('foryou')   // foryou | following | saved
-  const [bookmarked, setBookmarked] = useState([])
-  const [followingIds, setFollowingIds] = useState([])
-  const [blockedIds, setBlockedIds] = useState([])
-  const [showMore, setShowMore] = useState(null)      // video id for more-menu
+  const [feedTab, setFeedTab] = useState<FeedTab>('foryou')
+  const [bookmarked, setBookmarked] = useState<string[]>([])
+  const [followingIds, setFollowingIds] = useState<string[]>([])
+  const [blockedIds, setBlockedIds] = useState<string[]>([])
+  const [showMore, setShowMore] = useState<string | null>(null)      // video id for more-menu
 
-  const fileRef = useRef(null)
-  const videoRefs = useRef([])
-  const feedRef = useRef(null)
-  const viewedRef = useRef(new Set())
+  const fileRef = useRef<HTMLInputElement>(null)
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
+  const feedRef = useRef<HTMLDivElement>(null)
+  const viewedRef = useRef(new Set<string>())
   const lastTapRef = useRef(0)
-  const cursorRef = useRef(null)
+  const cursorRef = useRef<string | null>(null)
   const deepLinkHandled = useRef(false)
 
-  const fetchVideos = useCallback(async (append = false) => {
+  const fetchVideos = useCallback(async (append: boolean = false) => {
     if (append) setLoadingMore(true)
     else {
       setLoading(true)
@@ -143,7 +150,9 @@ export default function Moments({ profile }) {
   }, [feedTab, followingIds, bookmarked, blockedIds, browseCity])
 
   useEffect(() => {
+    if (!profile) return
     async function init() {
+      if (!profile) return
       const [fIds, bIds, blkIds] = await Promise.all([
         getFollowingIds(profile.id),
         getBookmarkedIds(profile.id),
@@ -155,7 +164,7 @@ export default function Moments({ profile }) {
     }
     init()
     fetchLiked()
-  }, [profile.id])
+  }, [profile?.id])
 
   useEffect(() => {
     cursorRef.current = null
@@ -173,7 +182,7 @@ export default function Moments({ profile }) {
     if (deepLinkHandled.current || loading) return
 
     async function openDeepLink() {
-      let idx = videos.findIndex(v => v.id === videoId)
+      const idx = videos.findIndex(v => v.id === videoId)
       if (idx < 0) {
         const { data, error } = await supabase
           .from('videos')
@@ -206,6 +215,7 @@ export default function Moments({ profile }) {
   }, [videos, loading, searchParams, setSearchParams])
 
   async function fetchLiked() {
+    if (!profile) return
     const { data } = await supabase
       .from('video_likes')
       .select('video_id')
@@ -221,7 +231,7 @@ export default function Moments({ profile }) {
       entries => {
         entries.forEach(entry => {
           if (!entry.isIntersecting) return
-          const idx = Number(entry.target.dataset.idx)
+          const idx = Number((entry.target as HTMLElement).dataset.idx)
           if (Number.isNaN(idx)) return
 
           setActiveIdx(idx)
@@ -257,6 +267,7 @@ export default function Moments({ profile }) {
     if (!container) return
 
     function onScroll() {
+      if (!container) return
       const nearBottom =
         container.scrollTop + container.clientHeight >= container.scrollHeight - window.innerHeight * 1.5
       if (nearBottom && hasMore && !loadingMore && !loading) {
@@ -268,9 +279,9 @@ export default function Moments({ profile }) {
     return () => container.removeEventListener('scroll', onScroll)
   }, [hasMore, loadingMore, loading, fetchVideos])
 
-  async function uploadVideo(e) {
+  async function uploadVideo(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !profile) return
 
     setUploadError('')
     const validation = await validateVideoFile(file)
@@ -300,7 +311,7 @@ export default function Moments({ profile }) {
         description: desc.trim(),
         video_url: data.secure_url,
         thumbnail_url: cloudinaryThumbnail(data.secure_url),
-        duration: validation.duration || Math.round(data.duration || 0),
+        duration: validation.duration || Math.round((data.duration as number) || 0),
         hashtags,
         status: videoStatus,
       })
@@ -316,7 +327,7 @@ export default function Moments({ profile }) {
       track('video_upload', { user_id: profile.id, status: videoStatus })
       alert('Moment uploaded! It will appear publicly after a quick review.')
     } catch (err) {
-      setUploadError(err.message || 'Upload failed')
+      setUploadError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
       setProgress(0)
@@ -324,7 +335,8 @@ export default function Moments({ profile }) {
     }
   }
 
-  async function toggleLike(videoId) {
+  async function toggleLike(videoId: string) {
+    if (!profile) return
     const isLiked = liked.includes(videoId)
     const video = videos.find(v => v.id === videoId)
     if (isLiked) {
@@ -349,13 +361,15 @@ export default function Moments({ profile }) {
     }
   }
 
-  async function handleBookmark(videoId) {
+  async function handleBookmark(videoId: string) {
+    if (!profile) return
     const isSaved = bookmarked.includes(videoId)
     const ok = await toggleBookmark(videoId, profile.id, isSaved)
     if (ok) setBookmarked(prev => isSaved ? prev.filter(id => id !== videoId) : [...prev, videoId])
   }
 
-  async function handleReport(video) {
+  async function handleReport(video: Video) {
+    if (!profile) return
     const reason = prompt('Why are you reporting this? (optional)')
     if (reason === null) return
     const ok = await reportContent({ reporterId: profile.id, targetType: 'video', targetId: video.id, reason })
@@ -363,7 +377,8 @@ export default function Moments({ profile }) {
     setShowMore(null)
   }
 
-  async function handleBlock(video) {
+  async function handleBlock(video: Video) {
+    if (!profile) return
     if (!confirm(`Block @${video.profiles?.username}? Their content will be hidden.`)) return
     const ok = await blockUser(profile.id, video.user_id)
     if (ok) {
@@ -373,18 +388,22 @@ export default function Moments({ profile }) {
     setShowMore(null)
   }
 
-  function handleVideoTap(videoId) {
+  function handleVideoTap(videoId: string) {
     const now = Date.now()
     if (now - lastTapRef.current < 300) {
       if (!liked.includes(videoId)) toggleLike(videoId)
     } else {
       const v = videoRefs.current[activeIdx]
-      if (v) v.paused ? v.play() : v.pause()
+      if (v) {
+        if (v.paused) v.play()
+        else v.pause()
+      }
     }
     lastTapRef.current = now
   }
 
-  async function deleteVideo(videoId) {
+  async function deleteVideo(videoId: string) {
+    if (!profile) return
     if (!confirm('Delete this moment?')) return
     const { error } = await supabase.from('videos').delete().eq('id', videoId).eq('user_id', profile.id)
     if (error) {
@@ -394,7 +413,7 @@ export default function Moments({ profile }) {
     setVideos(prev => prev.filter(v => v.id !== videoId))
   }
 
-  async function openComments(videoId) {
+  async function openComments(videoId: string) {
     setCommentsOpen(videoId)
     setCommentsLoading(true)
     const { data, error } = await supabase
@@ -413,6 +432,7 @@ export default function Moments({ profile }) {
   }
 
   async function postComment() {
+    if (!profile) return
     const content = commentText.trim()
     if (!content || !commentsOpen) return
 
@@ -450,7 +470,7 @@ export default function Moments({ profile }) {
     }
   }
 
-  function shareVideo(video) {
+  function shareVideo(video: Video) {
     if (video.status && video.status !== 'published') {
       alert('This Moment is still under review — sharing unlocks after it goes live.')
       return
@@ -471,7 +491,7 @@ export default function Moments({ profile }) {
       }}>
         <div style={{ color: 'white', fontWeight: 900, fontSize: 22 }}>✨ Moments · {browseCity}</div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {['foryou', 'following', 'saved'].map(tab => (
+          {(['foryou', 'following', 'saved'] as const).map(tab => (
             <button key={tab} onClick={() => setFeedTab(tab)} style={{
               background: feedTab === tab ? '#FF85B3' : 'rgba(255,255,255,0.15)',
               color: 'white', border: 'none', borderRadius: 50,
@@ -628,7 +648,7 @@ export default function Moments({ profile }) {
                     label={isSaved ? 'Remove bookmark' : 'Bookmark'}
                   />
 
-                  {video.user_id !== profile.id && (
+                  {video.user_id !== profile?.id && (
                     <ActionButton
                       icon={<span style={{ color: 'white', fontWeight: 900, fontSize: 20 }}>···</span>}
                       onClick={() => setShowMore(showMore === video.id ? null : video.id)}
@@ -651,7 +671,7 @@ export default function Moments({ profile }) {
                     </div>
                   )}
 
-                  {video.user_id === profile.id && (
+                  {video.user_id === profile?.id && (
                     <ActionButton
                       icon={<Trash2 size={22} color="#FF6B6B" />}
                       onClick={() => deleteVideo(video.id)}
@@ -671,9 +691,9 @@ export default function Moments({ profile }) {
                   {video.description && (
                     <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>{video.description}</div>
                   )}
-                  {video.hashtags?.length > 0 && (
+                  {(video.hashtags?.length ?? 0) > 0 && (
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                      {video.hashtags.map(tag => (
+                      {video.hashtags?.map(tag => (
                         <span key={tag} style={{ color: '#FF85B3', fontSize: 13, fontWeight: 700 }}>#{tag}</span>
                       ))}
                     </div>
@@ -809,7 +829,14 @@ export default function Moments({ profile }) {
   )
 }
 
-function ActionButton({ icon, count, onClick, label }) {
+interface ActionButtonProps {
+  icon: ReactNode
+  count?: number
+  onClick: () => void
+  label?: string
+}
+
+function ActionButton({ icon, count, onClick, label }: ActionButtonProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
       <button onClick={onClick} aria-label={label} style={actionBtnStyle}>{icon}</button>
@@ -820,46 +847,46 @@ function ActionButton({ icon, count, onClick, label }) {
   )
 }
 
-const centerStyle = {
+const centerStyle: CSSProperties = {
   height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
   color: 'white', fontWeight: 700, fontSize: 18,
 }
 
-const iconBtnStyle = {
+const iconBtnStyle: CSSProperties = {
   background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: 50,
   width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
 }
 
-const uploadBtnStyle = {
+const uploadBtnStyle: CSSProperties = {
   background: '#FF85B3', color: 'white', border: '2.5px solid white', borderRadius: 50,
   padding: '8px 18px', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
   display: 'flex', alignItems: 'center', gap: 6,
 }
 
-const avatarBtnStyle = {
+const avatarBtnStyle: CSSProperties = {
   width: 48, height: 48, borderRadius: 50, background: '#FF85B3', border: '2.5px solid white',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   color: 'white', fontWeight: 900, fontSize: 20, cursor: 'pointer', overflow: 'hidden',
 }
 
-const actionBtnStyle = {
+const actionBtnStyle: CSSProperties = {
   width: 48, height: 48, borderRadius: 50, background: 'rgba(0,0,0,0.4)', border: 'none',
   display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
 }
 
-const inputStyle = {
+const inputStyle: CSSProperties = {
   width: '100%', border: '3px solid #1C1C3A', borderRadius: 50,
   padding: '12px 16px', fontSize: 14, fontWeight: 600,
   background: '#FFF0F5', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
 }
 
-const closeBtnStyle = {
+const closeBtnStyle: CSSProperties = {
   background: '#FFE0E0', border: 'none', borderRadius: 50,
   width: 32, height: 32, cursor: 'pointer',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
 
-const chooseBtnStyle = {
+const chooseBtnStyle: CSSProperties = {
   width: '100%', background: '#FF85B3', color: 'white',
   border: '3px solid #1C1C3A', borderRadius: 50,
   padding: '16px 20px', fontWeight: 900, fontSize: 16,
@@ -867,7 +894,7 @@ const chooseBtnStyle = {
   fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
 }
 
-const moreMenuBtn = {
+const moreMenuBtn: CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 8,
   width: '100%', padding: '10px 12px', border: 'none',
   background: 'none', cursor: 'pointer', fontWeight: 700,

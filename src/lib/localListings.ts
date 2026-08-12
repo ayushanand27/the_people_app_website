@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { Listing, ListingUpdateRequest } from '../types'
 
 export interface ListingCategory {
   id: string
@@ -31,7 +32,7 @@ export interface FetchListingsParams {
   limit?: number
 }
 
-export async function fetchVerifiedListings({ city, category, search, limit = 50 }: FetchListingsParams) {
+export async function fetchVerifiedListings({ city, category, search, limit = 50 }: FetchListingsParams): Promise<Listing[]> {
   let query = supabase
     .from('local_listings')
     .select('id, city, category, title, description, price_text, phone, whatsapp, images, owner_id, created_at')
@@ -47,7 +48,7 @@ export async function fetchVerifiedListings({ city, category, search, limit = 50
   const { data, error } = await query
   if (error) throw error
 
-  let rows = data || []
+  let rows = (data || []) as Listing[]
   if (search?.trim()) {
     const q = search.trim().toLowerCase()
     rows = rows.filter(row =>
@@ -59,7 +60,7 @@ export async function fetchVerifiedListings({ city, category, search, limit = 50
   return rows
 }
 
-export async function fetchListingById(id: string) {
+export async function fetchListingById(id: string): Promise<Listing> {
   const { data, error } = await supabase
     .from('local_listings')
     .select('*, owner:profiles!owner_id(id, full_name, username, avatar_url)')
@@ -67,26 +68,26 @@ export async function fetchListingById(id: string) {
     .eq('status', 'verified')
     .single()
   if (error) throw error
-  return data
+  return data as unknown as Listing
 }
 
-export async function fetchAdminListings() {
+export async function fetchAdminListings(): Promise<Listing[]> {
   const { data, error } = await supabase
     .from('local_listings')
     .select('*')
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data || []
+  return (data || []) as Listing[]
 }
 
-export async function fetchPendingUpdateRequests() {
+export async function fetchPendingUpdateRequests(): Promise<ListingUpdateRequest[]> {
   const { data, error } = await supabase
     .from('listing_update_requests')
     .select('*, local_listings(title, city), submitter:profiles!submitted_by(full_name, username)')
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data || []
+  return (data || []) as unknown as ListingUpdateRequest[]
 }
 
 export async function createListing(payload: Record<string, unknown>) {

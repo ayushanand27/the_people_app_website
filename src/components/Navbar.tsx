@@ -5,22 +5,28 @@ import { Home, Compass, Users, MessageCircle, Calendar, User, Play, Bell } from 
 import { getUnreadNotificationCount } from '../lib/social'
 import { getBrowseCity, setBrowseCity } from '../lib/cities'
 import CitySelect from './CitySelect'
+import type { Profile } from '../types'
 
-export default function Navbar({ active, profile }) {
+interface NavbarProps {
+  active?: string
+  profile?: Profile | null
+}
+
+export default function Navbar({ active, profile }: NavbarProps) {
   const navigate = useNavigate()
   const [unread, setUnread] = useState(0)
   const [notifCount, setNotifCount] = useState(0)
   const [browseCity, setBrowseCityState] = useState(() => getBrowseCity(profile?.city))
 
   async function fetchNotifCount() {
-    setNotifCount(await getUnreadNotificationCount(profile.id))
+    setNotifCount(await getUnreadNotificationCount(profile?.id))
   }
 
   async function fetchUnread() {
     const { count } = await supabase
       .from('messages')
       .select('*', { count: 'exact', head: true })
-      .eq('receiver_id', profile.id)
+      .eq('receiver_id', profile?.id)
       .eq('read', false)
     setUnread(count || 0)
   }
@@ -30,7 +36,7 @@ export default function Navbar({ active, profile }) {
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'messages'
       }, payload => {
-        if (payload.new.receiver_id === profile.id) {
+        if (payload.new.receiver_id === profile?.id) {
           setUnread(prev => prev + 1)
         }
       })
@@ -52,14 +58,14 @@ export default function Navbar({ active, profile }) {
 
   useEffect(() => {
     setBrowseCityState(getBrowseCity(profile?.city))
-    function onCityChange(e) {
-      setBrowseCityState(e.detail || getBrowseCity(profile?.city))
+    function onCityChange(e: Event) {
+      setBrowseCityState((e as CustomEvent<string>).detail || getBrowseCity(profile?.city))
     }
     window.addEventListener('browse-city-changed', onCityChange)
     return () => window.removeEventListener('browse-city-changed', onCityChange)
   }, [profile?.city])
 
-  function switchCity(city) {
+  function switchCity(city: string) {
     setBrowseCity(city)
     setBrowseCityState(city)
   }

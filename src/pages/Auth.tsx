@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent, type CSSProperties } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { track } from '../lib/analytics'
 import { markPasswordResetPending, markGoogleOAuthPending } from '../lib/authRecovery'
 
+type AuthMode = 'login' | 'signup' | 'forgot'
+
 export default function Auth() {
   const [searchParams] = useSearchParams()
-  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
+  const initialMode: AuthMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [mode,     setMode]     = useState(initialMode)
+  const [mode,     setMode]     = useState<AuthMode>(initialMode)
   const [loading,  setLoading]  = useState(false)
   const [message,  setMessage]  = useState('')
 
-  function friendlyAuthError(raw) {
+  function friendlyAuthError(raw?: string) {
     const msg = String(raw || '')
     if (/error sending|unexpected_failure|smtp|rate.?limit/i.test(msg)) {
       return 'Email could not be sent right now. Try again in a few minutes, or use Google sign-in.'
@@ -41,7 +43,7 @@ export default function Auth() {
     } catch { /* ignore */ }
   }, [])
 
-  async function handleEmail(e) {
+  async function handleEmail(e: FormEvent) {
     e.preventDefault()
     setLoading(true)
     setMessage('')
@@ -61,7 +63,7 @@ export default function Auth() {
     setLoading(false)
   }
 
-  async function handleForgot(e) {
+  async function handleForgot(e: FormEvent) {
     e.preventDefault()
     if (!email) {
       setMessage('Enter your email address first')
@@ -116,7 +118,7 @@ export default function Auth() {
     }
   }
 
-  const inputStyle = {
+  const inputStyle: CSSProperties = {
     width: '100%', border: '3px solid #1C1C3A',
     borderRadius: 50, padding: '14px 20px',
     fontSize: 15, fontWeight: 600,

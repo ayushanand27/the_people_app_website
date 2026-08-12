@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, type FormEvent, type ChangeEvent, type UIEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
@@ -8,25 +8,35 @@ import { reportSupabaseError } from '../lib/supabaseError'
 import { checkChatText } from '../lib/chatSafety'
 import { moderateChatText, moderateChatImage } from '../lib/ai'
 import { reportContent, blockUser, getBlockedIds, createNotification } from '../lib/social'
+import type { Profile, Message } from '../types'
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 const BORDER = ['#FF6B9D','#4CAF82','#29ABE2','#FF9F1C','#9B59B6','#F1C40F']
 const MESSAGE_PAGE = 50
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
-export default function Chat({ profile }) {
+interface PendingImage {
+  file: File
+  preview: string
+}
+
+interface ChatProps {
+  profile?: Profile | null
+}
+
+export default function Chat({ profile }: ChatProps) {
   const navigate           = useNavigate()
   const { id: receiverId } = useParams()
-  const bottomRef          = useRef(null)
-  const messagesRef        = useRef(null)
-  const oldestCursorRef    = useRef(null)
-  const fileRef            = useRef(null)
+  const bottomRef          = useRef<HTMLDivElement>(null)
+  const messagesRef        = useRef<HTMLDivElement>(null)
+  const oldestCursorRef    = useRef<string | null>(null)
+  const fileRef            = useRef<HTMLInputElement>(null)
 
-  const [conversations, setConversations] = useState([])
-  const [messages,      setMessages]      = useState([])
-  const [receiver,      setReceiver]      = useState(null)
+  const [conversations, setConversations] = useState<Profile[]>([])
+  const [messages,      setMessages]      = useState<Message[]>([])
+  const [receiver,      setReceiver]      = useState<Profile | null>(null)
   const [newMsg,        setNewMsg]        = useState('')
-  const [pendingImage,  setPendingImage]  = useState(null)
+  const [pendingImage,  setPendingImage]  = useState<PendingImage | null>(null)
   const [uploading,     setUploading]     = useState(false)
   const [loading,       setLoading]       = useState(true)
   const [loadError,     setLoadError]     = useState('')
@@ -49,6 +59,7 @@ export default function Chat({ profile }) {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages.length, receiverId])
 
   async function markThreadRead() {
+    if (!profile) return
     await supabase.from('messages')
       .update({ read: true })
       .eq('receiver_id', profile.id)
@@ -57,6 +68,7 @@ export default function Chat({ profile }) {
   }
 
   async function fetchConversations() {
+    if (!profile) return
     setLoadError('')
     setLoading(true)
     const blockedIds = await getBlockedIds(profile.id)
@@ -87,6 +99,7 @@ export default function Chat({ profile }) {
   }
 
   async function fetchReceiver() {
+    if (!profile || !receiverId) return
     const blockedIds = await getBlockedIds(profile.id)
     if (blockedIds.includes(receiverId)) {
       setReceiver(null)
@@ -105,6 +118,7 @@ export default function Chat({ profile }) {
   }
 
   async function fetchMessages() {
+    if (!profile || !receiverId) return
     const { data, error } = await supabase.from('messages').select('*')
       .or(`and(sender_id.eq.${profile.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${profile.id})`)
       .order('created_at', { ascending: false })
@@ -121,6 +135,7 @@ export default function Chat({ profile }) {
   }
 
   async function loadOlderMessages() {
+    if (!profile || !receiverId) return
     if (!oldestCursorRef.current || loadingOlder || !hasOlder) return
     setLoadingOlder(true)
     const container = messagesRef.current
@@ -153,23 +168,23 @@ export default function Chat({ profile }) {
     setLoadingOlder(false)
   }
 
-  function handleMessagesScroll(e) {
+  function handleMessagesScroll(e: UIEvent<HTMLDivElement>) {
     if (e.currentTarget.scrollTop < 80) loadOlderMessages()
   }
 
   function subscribeMessages() {
     const ch = supabase.channel(`msgs-${receiverId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-        const m = payload.new
-        if ((m.sender_id === profile.id && m.receiver_id === receiverId) ||
-            (m.sender_id === receiverId && m.receiver_id === profile.id)) {
+        const m = payload.new as Message
+        if ((m.sender_id === profile?.id && m.receiver_id === receiverId) ||
+            (m.sender_id === receiverId && m.receiver_id === profile?.id)) {
           setMessages(prev => (prev.some(x => x.id === m.id) ? prev : [...prev, m]))
         }
       }).subscribe()
-    return () => supabase.removeChannel(ch)
+    return () => { supabase.removeChannel(ch) }
   }
 
-  function onPickImage(e) {
+  function onPickImage(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
@@ -193,7 +208,8 @@ export default function Chat({ profile }) {
     setPendingImage(null)
   }
 
-  async function uploadChatImage(file) {
+  async function uploadChatImage(file: File) {
+    if (!profile) throw new Error('Not signed in')
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
     const path = `${profile.id}/${Date.now()}.${ext}`
     const { error } = await supabase.storage.from('chat-images').upload(path, file, {
@@ -205,13 +221,13 @@ export default function Chat({ profile }) {
     return { publicUrl: data.publicUrl, path }
   }
 
-  async function deleteUploadedImage(path) {
+  async function deleteUploadedImage(path?: string | null) {
     if (!path) return
     await supabase.storage.from('chat-images').remove([path])
   }
 
   async function handleReport() {
-    if (!receiverId || safetyBusy) return
+    if (!profile || !receiverId || safetyBusy) return
     const reason = window.prompt('Why are you reporting this user? (optional)')
     if (reason === null) return
     setSafetyBusy(true)
@@ -226,7 +242,7 @@ export default function Chat({ profile }) {
   }
 
   async function handleBlock() {
-    if (!receiverId || safetyBusy) return
+    if (!profile || !receiverId || safetyBusy) return
     if (!window.confirm(`Block ${receiver?.full_name || 'this user'}? They won’t be able to message you or see your profile.`)) return
     setSafetyBusy(true)
     const ok = await blockUser(profile.id, receiverId)
@@ -240,8 +256,9 @@ export default function Chat({ profile }) {
     }
   }
 
-  async function sendMessage(e) {
+  async function sendMessage(e: FormEvent) {
     e.preventDefault()
+    if (!profile || !receiverId) return
     const content = newMsg.trim()
     if (!content && !pendingImage) return
 
@@ -256,8 +273,8 @@ export default function Chat({ profile }) {
 
     setUploading(true)
     setLoadError('')
-    let imageUrl = null
-    let imagePath = null
+    let imageUrl: string | null = null
+    let imagePath: string | null = null
 
     try {
       // 2) AI text moderation (fail open if AI down — local filter already ran)
@@ -303,11 +320,11 @@ export default function Chat({ profile }) {
       fetchConversations()
     } catch (err) {
       if (imagePath) await deleteUploadedImage(imagePath)
-      const msg = err?.message || ''
+      const msg = err instanceof Error ? err.message : ''
       if (/Rate limit: max 10 new/i.test(msg)) {
         setLoadError('Slow down — you can only start 10 new chats per hour.')
       } else {
-        setLoadError(reportSupabaseError(err, 'Send message') || msg || 'Could not send message')
+        setLoadError(reportSupabaseError(err as { message?: string }, 'Send message') || msg || 'Could not send message')
       }
     } finally {
       setUploading(false)
@@ -466,7 +483,7 @@ export default function Chat({ profile }) {
           </div>
         )}
         {messages.map(msg => {
-          const isMine = msg.sender_id === profile.id
+          const isMine = msg.sender_id === profile?.id
           return (
             <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start' }}>
               <div style={{

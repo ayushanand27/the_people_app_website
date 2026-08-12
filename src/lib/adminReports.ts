@@ -1,15 +1,5 @@
 import { supabase } from './supabase'
-
-export interface AdminReport {
-  id: string
-  target_type: 'video' | 'comment' | 'user'
-  target_id: string
-  reason?: string
-  status: string
-  created_at: string
-  reporter?: { id: string; full_name?: string; username?: string; avatar_url?: string }
-  target?: Record<string, unknown>
-}
+import type { AdminReport, PendingVideo } from '../types'
 
 /** Fetch reports with reporter profile; enrich target details client-side. */
 export async function fetchAdminReports(): Promise<AdminReport[]> {
@@ -88,14 +78,14 @@ export async function adminBanUser(userId: string): Promise<void> {
   if (error) throw error
 }
 
-export async function fetchPendingVideos() {
+export async function fetchPendingVideos(): Promise<PendingVideo[]> {
   const { data, error } = await supabase
     .from('videos')
     .select('id, title, description, hashtags, status, created_at, user_id, profiles(full_name, username)')
     .eq('status', 'pending_review')
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data || []
+  return (data || []) as unknown as PendingVideo[]
 }
 
 export async function approveVideo(videoId: string): Promise<void> {

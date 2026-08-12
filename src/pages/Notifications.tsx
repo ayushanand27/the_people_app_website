@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { Heart, MessageCircle, UserPlus, Bell } from 'lucide-react'
 import { getNotifications, markNotificationsRead } from '../lib/social'
+import type { Profile, NotificationItem } from '../types'
 
-const ICONS = { like: Heart, comment: MessageCircle, follow: UserPlus, message: MessageCircle }
-const COLORS = { like: '#FF6B6B', comment: '#29ABE2', follow: '#4CAF82', message: '#FF85B3' }
+const ICONS: Record<string, typeof Heart> = { like: Heart, comment: MessageCircle, follow: UserPlus, message: MessageCircle }
+const COLORS: Record<string, string> = { like: '#FF6B6B', comment: '#29ABE2', follow: '#4CAF82', message: '#FF85B3' }
 
-function timeAgo(dateStr) {
+function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return 'just now'
@@ -17,7 +18,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
-function notifText(n) {
+function notifText(n: NotificationItem): string {
   const name = n.actor?.full_name || 'Someone'
   switch (n.type) {
     case 'like':    return `${name} liked your moment`
@@ -28,21 +29,26 @@ function notifText(n) {
   }
 }
 
-export default function Notifications({ profile }) {
+interface NotificationsProps {
+  profile?: Profile | null
+}
+
+export default function Notifications({ profile }: NotificationsProps) {
   const navigate = useNavigate()
-  const [items, setItems] = useState([])
+  const [items, setItems] = useState<NotificationItem[]>([])
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
+    if (!profile) return
     const data = await getNotifications(profile.id)
     setItems(data)
     setLoading(false)
     await markNotificationsRead(profile.id)
-  }, [profile.id])
+  }, [profile?.id])
 
   useEffect(() => { load() }, [load])
 
-  function handleClick(n) {
+  function handleClick(n: NotificationItem) {
     if (n.type === 'follow' && n.actor_id) navigate(`/profile/${n.actor_id}`)
     else if ((n.type === 'like' || n.type === 'comment') && n.entity_id) navigate(`/moments?v=${n.entity_id}`)
     else if (n.type === 'message' && n.actor_id) navigate(`/chat/${n.actor_id}`)

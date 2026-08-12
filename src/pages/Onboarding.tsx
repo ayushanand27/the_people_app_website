@@ -4,6 +4,7 @@ import { track } from '../lib/analytics'
 import { useNavigate } from 'react-router-dom'
 import CityPicker from '../components/CityPicker'
 import { resolveCity, isCityValid } from '../lib/cities'
+import type { Profile } from '../types'
 
 const INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
@@ -14,7 +15,12 @@ const INTERESTS = [
 
 const BG = ['#FFB3CC','#B8F0B8','#B3E5FC','#FFD699','#E8D5FF','#FFE566']
 
-export default function Onboarding({ profile, setProfile }) {
+interface OnboardingProps {
+  profile?: Profile | null
+  setProfile: (profile: Profile) => void
+}
+
+export default function Onboarding({ profile, setProfile }: OnboardingProps) {
   const navigate = useNavigate()
   const [step,      setStep]      = useState(1)
   const [fullName,  setFullName]  = useState(profile?.full_name || '')
@@ -22,11 +28,11 @@ export default function Onboarding({ profile, setProfile }) {
   const [bio,       setBio]       = useState('')
   const [city,      setCity]      = useState('')
   const [customCity, setCustomCity] = useState('')
-  const [interests, setInterests] = useState([])
+  const [interests, setInterests] = useState<string[]>([])
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
 
-  function toggleInterest(x) {
+  function toggleInterest(x: string) {
     setInterests(prev =>
       prev.includes(x) ? prev.filter(i => i !== x)
       : prev.length < 5 ? [...prev, x] : prev

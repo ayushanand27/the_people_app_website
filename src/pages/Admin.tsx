@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import AdminReportsTab from './admin/AdminReportsTab'
 import AdminListingsTab from './admin/AdminListingsTab'
 import CityPicker from '../components/CityPicker'
 import { resolveCity, isCityValid } from '../lib/cities'
+import type { Profile, Group, EventItem } from '../types'
 
 const INTERESTS = [
   'Tech/Coding', 'Art/Design', 'Finance/Investing', 'Movies/Cinema',
@@ -16,16 +17,23 @@ const INTERESTS = [
 
 const USER_PAGE_SIZE = 20
 
-export default function Admin({ profile }) {
+type AdminTab = 'groups' | 'events' | 'listings' | 'users' | 'reports'
+type AdminUser = Pick<Profile, 'id' | 'full_name' | 'username' | 'city' | 'created_at'>
+
+interface AdminProps {
+  profile?: Profile | null
+}
+
+export default function Admin({ profile }: AdminProps) {
   const navigate = useNavigate()
-  const [tab,      setTab]      = useState('groups')
-  const [groups,   setGroups]   = useState([])
-  const [events,   setEvents]   = useState([])
-  const [users,    setUsers]    = useState([])
+  const [tab,      setTab]      = useState<AdminTab>('groups')
+  const [groups,   setGroups]   = useState<Group[]>([])
+  const [events,   setEvents]   = useState<EventItem[]>([])
+  const [users,    setUsers]    = useState<AdminUser[]>([])
   const [totalUsers, setTotalUsers] = useState(0)
   const [usersHasMore, setUsersHasMore] = useState(true)
   const [usersLoadingMore, setUsersLoadingMore] = useState(false)
-  const usersCursorRef = useRef(null)
+  const usersCursorRef = useRef<string | null>(null)
   const [pendingReports, setPendingReports] = useState(0)
   const [loading,  setLoading]  = useState(true)
   const [success,  setSuccess]  = useState('')
@@ -37,7 +45,7 @@ export default function Admin({ profile }) {
   const [gCity,     setGCity]     = useState('Jaipur')
   const [gCustomCity, setGCustomCity] = useState('')
   const [gMax,      setGMax]      = useState(12)
-  const [gInterests,setGInterests]= useState([])
+  const [gInterests,setGInterests]= useState<string[]>([])
 
   // EVENT FORM
   const [eName,     setEName]     = useState('')
@@ -81,9 +89,9 @@ export default function Admin({ profile }) {
       return
     }
 
-    const batch = data || []
+    const batch = (data || []) as AdminUser[]
     if (batch.length > 0) {
-      usersCursorRef.current = batch[batch.length - 1].created_at
+      usersCursorRef.current = batch[batch.length - 1].created_at ?? null
     }
     setUsersHasMore(batch.length === USER_PAGE_SIZE)
     setUsers(prev => (append ? [...prev, ...batch] : batch))
@@ -107,16 +115,17 @@ export default function Admin({ profile }) {
     setLoading(false)
   }
 
-  function toggleGInterest(x) {
+  function toggleGInterest(x: string) {
     setGInterests(prev => prev.includes(x) ? prev.filter(i => i !== x) : [...prev, x])
   }
 
-  function showSuccess(msg) {
+  function showSuccess(msg: string) {
     setSuccess(msg)
     setTimeout(() => setSuccess(''), 3000)
   }
 
   async function createGroup() {
+    if (!profile) return
     const finalGCity = resolveCity(gCity, gCustomCity)
     if (!gName || !isCityValid(gCity, gCustomCity) || gInterests.length === 0) {
       setError('Fill all group fields')
@@ -135,7 +144,7 @@ export default function Admin({ profile }) {
     fetchAll()
   }
 
-  async function deleteGroup(id) {
+  async function deleteGroup(id: string) {
     if (!confirm('Delete this group?')) return
     setError('')
     const { error: groupError } = await supabase.from('groups').delete().eq('id', id)
@@ -147,7 +156,7 @@ export default function Admin({ profile }) {
   }
 
   async function createEvent() {
-    if (eventSaving) return
+    if (!profile || eventSaving) return
     const finalECity = resolveCity(eCity, eCustomCity)
     if (!eName || !isCityValid(eCity, eCustomCity) || !eDate || !eLocation) {
       setError('Fill all event fields')
@@ -171,7 +180,7 @@ export default function Admin({ profile }) {
     }
   }
 
-  async function deleteEvent(id) {
+  async function deleteEvent(id: string) {
     if (!confirm('Delete this event?')) return
     setError('')
 
@@ -188,14 +197,14 @@ export default function Admin({ profile }) {
     fetchAll()
   }
 
-  const inputStyle = {
+  const inputStyle: CSSProperties = {
     width: '100%', border: '3px solid #1C1C3A', borderRadius: 16,
     padding: '12px 16px', fontSize: 14, fontWeight: 600,
     background: '#FFF0F5', outline: 'none',
     fontFamily: 'inherit', boxSizing: 'border-box'
   }
 
-  const labelStyle = { fontWeight: 700, fontSize: 13, marginBottom: 6, display: 'block' }
+  const labelStyle: CSSProperties = { fontWeight: 700, fontSize: 13, marginBottom: 6, display: 'block' }
 
   if (loading) {
     return (
@@ -257,7 +266,7 @@ export default function Admin({ profile }) {
 
         {/* TABS */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          {['groups','events','listings','users','reports'].map(t => (
+          {(['groups','events','listings','users','reports'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '10px 20px', borderRadius: 50,
               border: '3px solid #1C1C3A', fontWeight: 700, fontSize: 14,
@@ -506,7 +515,7 @@ export default function Admin({ profile }) {
                       @{u.username || 'no username'} · 📍 {u.city || 'No city'}
                     </div>
                     <div style={{ color: '#aaa', fontSize: 11, marginTop: 2 }}>
-                      Joined {new Date(u.created_at).toLocaleDateString()}
+                      Joined {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
                     </div>
                   </div>
                 </div>

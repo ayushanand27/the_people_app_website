@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent, type CSSProperties } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { MessageCircle } from 'lucide-react'
@@ -9,11 +9,16 @@ import {
   fetchListingById,
   submitListingUpdateRequest,
 } from '../lib/localListings'
+import type { Profile, Listing } from '../types'
 
-export default function LocalDetail({ profile }) {
+interface LocalDetailProps {
+  profile?: Profile | null
+}
+
+export default function LocalDetail({ profile }: LocalDetailProps) {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [listing, setListing] = useState(null)
+  const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
@@ -21,10 +26,11 @@ export default function LocalDetail({ profile }) {
   const [suggesting, setSuggesting] = useState(false)
 
   useEffect(() => {
+    if (!id) return
     async function load() {
       setLoading(true)
       try {
-        const data = await fetchListingById(id)
+        const data = await fetchListingById(id as string)
         setListing(data)
       } catch {
         setError('Listing not found')
@@ -35,9 +41,9 @@ export default function LocalDetail({ profile }) {
     load()
   }, [id])
 
-  async function handleSuggestUpdate(e) {
+  async function handleSuggestUpdate(e: FormEvent) {
     e.preventDefault()
-    if (!note.trim()) return
+    if (!note.trim() || !id || !profile) return
     setSuggesting(true)
     setSuggestMsg('')
     try {
@@ -50,7 +56,7 @@ export default function LocalDetail({ profile }) {
       setSuggestMsg('Thanks! Your update suggestion was sent for admin review.')
       setNote('')
     } catch (err) {
-      setSuggestMsg(err.message || 'Could not submit suggestion')
+      setSuggestMsg(err instanceof Error ? err.message : 'Could not submit suggestion')
     } finally {
       setSuggesting(false)
     }
@@ -112,17 +118,17 @@ export default function LocalDetail({ profile }) {
           ← Back
         </button>
 
-        {listing.images?.length > 0 && (
+        {(listing.images?.length ?? 0) > 0 && (
           <div style={{
             display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 16,
           }}>
-            {listing.images.map((url, i) => (
+            {listing.images?.map((url, i) => (
               <img
                 key={i}
                 src={url}
                 alt=""
                 style={{
-                  width: listing.images.length === 1 ? '100%' : 280,
+                  width: listing.images?.length === 1 ? '100%' : 280,
                   height: 200, objectFit: 'cover', borderRadius: 16,
                   border: '3px solid #1C1C3A', flexShrink: 0,
                 }}
@@ -245,7 +251,7 @@ const badgeStyle = {
   fontWeight: 700,
 }
 
-function btnStyle(bg) {
+function btnStyle(bg: string): CSSProperties {
   return {
     display: 'block',
     textAlign: 'center',
