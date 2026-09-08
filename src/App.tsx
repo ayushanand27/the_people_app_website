@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactElement } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import type { Session, AuthChangeEvent } from '@supabase/supabase-js'
+import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { identifyUser } from './lib/analytics'
 import {
@@ -8,6 +8,8 @@ import {
   isGoogleOAuthPending,
   clearGoogleOAuthPending,
 } from './lib/authRecovery'
+import { checkSupabaseHealth, getSessionWithTimeout } from './lib/supabaseHealth'
+import BackendUnavailable from './components/BackendUnavailable'
 import type { Profile } from './types'
 
 import Auth from './pages/Auth'
@@ -57,6 +59,7 @@ function MainApp() {
   const [loading, setLoading] = useState(true)
   const [oauthExchanging, setOauthExchanging] = useState(false)
   const [profileError, setProfileError] = useState('')
+  const [backendDown, setBackendDown] = useState(false)
 
   useEffect(() => {
     async function handleOAuthReturn() {
@@ -112,7 +115,34 @@ function MainApp() {
   }
 
   useEffect(() => {
-    function handleAuthEvent(_event: AuthChangeEvent, s: Session | null) {
+    let cancelled = false
+
+    async function init() {
+      const healthy = await checkSupabaseHealth()
+      if (cancelled) return
+      if (!healthy) {
+        setBackendDown(true)
+        setLoading(false)
+        return
+      }
+
+      try {
+        const { data: { session: s } } = await getSessionWithTimeout()
+        if (cancelled) return
+        setSession(s)
+        if (s) await fetchProfile(s.user.id)
+        else setLoading(false)
+      } catch {
+        if (cancelled) return
+        setBackendDown(true)
+        setLoading(false)
+      }
+    }
+
+    init()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      if (event === 'INITIAL_SESSION') return
       setSession(s)
       if (s) fetchProfile(s.user.id)
       else {
@@ -120,16 +150,39 @@ function MainApp() {
         setProfileError('')
         setLoading(false)
       }
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      handleAuthEvent(event, s)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
+  async function retryBackend() {
+    setLoading(true)
+    setBackendDown(false)
+    const healthy = await checkSupabaseHealth()
+    if (!healthy) {
+      setBackendDown(true)
+      setLoading(false)
+      return
+    }
+    try {
+      const { data: { session: s } } = await getSessionWithTimeout()
+      setSession(s)
+      if (s) await fetchProfile(s.user.id)
+      else setLoading(false)
+    } catch {
+      setBackendDown(true)
+      setLoading(false)
+    }
+  }
+
   if (loading || oauthExchanging) return <PageLoader />
+
+  if (backendDown) {
+    return <BackendUnavailable onRetry={retryBackend} />
+  }
 
   if (shouldBlockAppForPasswordReset(session)) {
     return <Navigate to="/reset-password" replace />

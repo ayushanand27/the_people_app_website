@@ -17,6 +17,9 @@ export default function Auth() {
 
   function friendlyAuthError(raw?: string) {
     const msg = String(raw || '')
+    if (/failed to fetch|network|timeout|name not resolved|load failed/i.test(msg)) {
+      return 'Cannot reach the server. The Supabase project may be paused — check the dashboard and try again.'
+    }
     if (/error sending|unexpected_failure|smtp|rate.?limit/i.test(msg)) {
       return 'Email could not be sent right now. Try again in a few minutes, or use Google sign-in.'
     }
