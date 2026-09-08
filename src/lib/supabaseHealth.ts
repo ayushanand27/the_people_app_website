@@ -5,11 +5,13 @@ const HEALTH_TIMEOUT_MS = 8000
 /** True when Supabase auth API responds (project exists and is reachable). */
 export async function checkSupabaseHealth(): Promise<boolean> {
   const url = import.meta.env.VITE_SUPABASE_URL
-  if (!url) return false
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  if (!url || !anonKey) return false
 
   try {
     const res = await fetch(`${url.replace(/\/$/, '')}/auth/v1/health`, {
       method: 'GET',
+      headers: { apikey: anonKey },
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
     })
     return res.ok
