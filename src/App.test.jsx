@@ -70,10 +70,6 @@ function setUrl(path) {
   window.history.pushState(null, '', path)
 }
 
-function signIn(userId = 'user-1') {
-  act(() => { authCallback('SIGNED_IN', { user: { id: userId } }) })
-}
-
 function signedOut() {
   act(() => { authCallback('SIGNED_OUT', null) })
 }
