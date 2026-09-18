@@ -20,6 +20,12 @@ export default defineConfig({
       // API/Realtime requests, so auth/data/websocket behavior is unaffected.
       workbox: {
         navigateFallbackDenylist: [/^\/admin/],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.hostname.endsWith('.supabase.co'),
+            handler: 'NetworkOnly',
+          },
+        ],
       },
       manifest: {
         name: 'The People App',

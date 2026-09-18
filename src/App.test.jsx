@@ -51,10 +51,12 @@ vi.mock('./lib/authRecovery', () => ({
   shouldBlockAppForPasswordReset: vi.fn(() => false),
   isGoogleOAuthPending: vi.fn(() => false),
   clearGoogleOAuthPending: vi.fn(),
+  isPasswordResetPending: vi.fn(() => false),
+  clearPasswordResetPending: vi.fn(),
 }))
 
 vi.mock('./lib/supabaseHealth', () => ({
-  checkSupabaseHealth: vi.fn(() => Promise.resolve(true)),
+  checkSupabaseHealth: vi.fn(() => Promise.resolve({ ok: true })),
   getSessionWithTimeout: vi.fn(() =>
     import('./lib/supabase').then(({ supabase }) => supabase.auth.getSession()),
   ),
@@ -62,13 +64,10 @@ vi.mock('./lib/supabaseHealth', () => ({
 
 const { default: App } = await import('./App')
 const authRecovery = await import('./lib/authRecovery')
+const supabaseHealth = await import('./lib/supabaseHealth')
 
 function setUrl(path) {
   window.history.pushState(null, '', path)
-}
-
-function signIn(userId = 'user-1') {
-  act(() => { authCallback('SIGNED_IN', { user: { id: userId } }) })
 }
 
 function signedOut() {
@@ -94,6 +93,10 @@ beforeEach(() => {
   authRecovery.shouldBlockAppForPasswordReset.mockReset().mockReturnValue(false)
   authRecovery.isGoogleOAuthPending.mockReset().mockReturnValue(false)
   profileResult = { data: null, error: { code: 'PGRST116' } }
+  supabaseHealth.checkSupabaseHealth.mockReset().mockResolvedValue({ ok: true })
+  supabaseHealth.getSessionWithTimeout.mockReset().mockImplementation(() =>
+    import('./lib/supabase').then(({ supabase }) => supabase.auth.getSession()),
+  )
 })
 
 describe('App routing and auth guards', () => {
@@ -160,6 +163,25 @@ describe('App routing and auth guards', () => {
     getSession.mockResolvedValue({ data: { session: { user: { id: 'user-1' } } } })
     render(<App />)
     await waitFor(() => expect(window.location.pathname).toBe('/reset-password'))
+  })
+
+  it('does not call a session timeout "backend down" when Supabase is reachable', async () => {
+    setUrl('/')
+    supabaseHealth.getSessionWithTimeout.mockRejectedValue(new Error('Backend timeout'))
+    supabaseHealth.checkSupabaseHealth.mockResolvedValue({ ok: true })
+    render(<App />)
+    await waitFor(() => expect(screen.getByText('Log in')).toBeInTheDocument())
+    expect(screen.queryByText(/Cannot reach the database/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Backend temporarily unavailable/)).not.toBeInTheDocument()
+  })
+
+  it('shows a config/network screen only when the session read fails and health fails', async () => {
+    setUrl('/')
+    supabaseHealth.getSessionWithTimeout.mockRejectedValue(new Error('Backend timeout'))
+    supabaseHealth.checkSupabaseHealth.mockResolvedValue({ ok: false, reason: 'unreachable' })
+    render(<App />)
+    await waitFor(() => expect(screen.getByText(/Cannot reach the database/)).toBeInTheDocument())
+    expect(screen.getByText(/paused project/i)).toBeInTheDocument()
   })
 
   it('redirects an unauthenticated user away from a protected route to /auth', async () => {

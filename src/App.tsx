@@ -60,6 +60,7 @@ function MainApp() {
   const [oauthExchanging, setOauthExchanging] = useState(false)
   const [profileError, setProfileError] = useState('')
   const [backendDown, setBackendDown] = useState(false)
+  const [backendDownReason, setBackendDownReason] = useState<'missing_config' | 'unreachable' | undefined>()
 
   useEffect(() => {
     async function handleOAuthReturn() {
@@ -118,23 +119,26 @@ function MainApp() {
     let cancelled = false
 
     async function init() {
-      const healthy = await checkSupabaseHealth()
-      if (cancelled) return
-      if (!healthy) {
-        setBackendDown(true)
-        setLoading(false)
-        return
-      }
-
+      const healthPromise = checkSupabaseHealth()
       try {
         const { data: { session: s } } = await getSessionWithTimeout()
         if (cancelled) return
+        setBackendDown(false)
         setSession(s)
         if (s) await fetchProfile(s.user.id)
         else setLoading(false)
       } catch {
         if (cancelled) return
-        setBackendDown(true)
+        const health = await healthPromise
+        if (cancelled) return
+        if (!health.ok) {
+          setBackendDown(true)
+          setBackendDownReason(health.reason)
+          setLoading(false)
+          return
+        }
+        setBackendDown(false)
+        setSession(null)
         setLoading(false)
       }
     }
@@ -142,7 +146,14 @@ function MainApp() {
     init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      if (event === 'INITIAL_SESSION') return
+      if (event === 'INITIAL_SESSION') {
+        if (s) {
+          setBackendDown(false)
+          setSession(s)
+          fetchProfile(s.user.id)
+        }
+        return
+      }
       setSession(s)
       if (s) fetchProfile(s.user.id)
       else {
@@ -161,19 +172,22 @@ function MainApp() {
   async function retryBackend() {
     setLoading(true)
     setBackendDown(false)
-    const healthy = await checkSupabaseHealth()
-    if (!healthy) {
-      setBackendDown(true)
-      setLoading(false)
-      return
-    }
+    setBackendDownReason(undefined)
+    const healthPromise = checkSupabaseHealth()
     try {
       const { data: { session: s } } = await getSessionWithTimeout()
       setSession(s)
       if (s) await fetchProfile(s.user.id)
       else setLoading(false)
     } catch {
-      setBackendDown(true)
+      const health = await healthPromise
+      if (!health.ok) {
+        setBackendDown(true)
+        setBackendDownReason(health.reason)
+        setLoading(false)
+        return
+      }
+      setSession(null)
       setLoading(false)
     }
   }
@@ -181,7 +195,7 @@ function MainApp() {
   if (loading || oauthExchanging) return <PageLoader />
 
   if (backendDown) {
-    return <BackendUnavailable onRetry={retryBackend} />
+    return <BackendUnavailable onRetry={retryBackend} reason={backendDownReason} />
   }
 
   if (shouldBlockAppForPasswordReset(session)) {
