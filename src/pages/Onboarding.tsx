@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { track } from '../lib/analytics'
 import { useNavigate } from 'react-router-dom'
 import CityPicker from '../components/CityPicker'
-import { resolveCity, isCityValid } from '../lib/cities'
+import { resolveCity, isCityValid, initCityState } from '../lib/cities'
 import type { Profile } from '../types'
 
 const INTERESTS = [
@@ -23,12 +23,13 @@ interface OnboardingProps {
 export default function Onboarding({ profile, setProfile }: OnboardingProps) {
   const navigate = useNavigate()
   const [step,      setStep]      = useState(1)
+  const initialCity = initCityState(profile?.city)
   const [fullName,  setFullName]  = useState(profile?.full_name || '')
-  const [username,  setUsername]  = useState('')
-  const [bio,       setBio]       = useState('')
-  const [city,      setCity]      = useState('')
-  const [customCity, setCustomCity] = useState('')
-  const [interests, setInterests] = useState<string[]>([])
+  const [username,  setUsername]  = useState(profile?.username || '')
+  const [bio,       setBio]       = useState(profile?.bio || '')
+  const [city,      setCity]      = useState(initialCity.city)
+  const [customCity, setCustomCity] = useState(initialCity.customCity)
+  const [interests, setInterests] = useState<string[]>(profile?.interests || [])
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
 
@@ -64,13 +65,14 @@ export default function Onboarding({ profile, setProfile }: OnboardingProps) {
       return
     }
     const { data, error: err } = await supabase.from('profiles')
-      .update({
+      .upsert({
+        id: user.id,
         full_name: fullName,
         username: cleanUsername,
         bio, city: finalCity, interests,
         onboarding_complete: true
-      })
-      .eq('id', user.id).select().single()
+      }, { onConflict: 'id' })
+      .select().single()
     if (err) {
       const msg = /duplicate|unique/i.test(err.message)
         ? 'That username is taken. Try another.'

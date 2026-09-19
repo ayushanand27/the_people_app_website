@@ -10,6 +10,7 @@ import {
 } from './lib/authRecovery'
 import { checkSupabaseHealth, getSessionWithTimeout } from './lib/supabaseHealth'
 import BackendUnavailable from './components/BackendUnavailable'
+import NotFound from './components/NotFound'
 import type { Profile } from './types'
 
 import Auth from './pages/Auth'
@@ -270,6 +271,11 @@ function MainApp() {
           session && profile?.is_admin && profile?.onboarding_complete
             ? <Admin profile={profile} />
             : <Navigate to={needsOnboarding ? '/onboarding' : '/dashboard'} />
+        } />
+        <Route path="*" element={
+          !session ? <NotFound /> :
+          needsOnboarding ? <Navigate to="/onboarding" /> :
+          <NotFound profile={profile} />
         } />
       </Routes>
     </Suspense>

@@ -39,13 +39,28 @@ export default function Discover({ profile }: DiscoverProps) {
   const [loadingMore,    setLoadingMore]     = useState(false)
   const [page,           setPage]            = useState(0)
   const [blockedIds,     setBlockedIds]      = useState<string[]>([])
+  const [blockedReady,   setBlockedReady]    = useState(false)
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
   useEffect(() => {
     if (!profile?.id) return
-    getBlockedIds(profile.id).then(setBlockedIds)
+    let cancelled = false
+    getBlockedIds(profile.id).then(ids => {
+      if (cancelled) return
+      setBlockedIds(ids)
+      setBlockedReady(true)
+    })
+    return () => { cancelled = true }
   }, [profile?.id])
 
-  useEffect(() => { if (profile) fetchPeople(false) }, [profile, browseCity, blockedIds])
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  useEffect(() => {
+    if (profile && blockedReady) fetchPeople(false)
+  }, [profile, browseCity, blockedIds, blockedReady, debouncedSearch, selectedInterest])
 
   async function fetchPeople(append = false) {
     if (!profile) return
@@ -60,11 +75,20 @@ export default function Discover({ profile }: DiscoverProps) {
     const from = nextPage * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
 
-    const query = supabase.from('profiles')
+    const q = debouncedSearch.replace(/[%_,()]/g, '').slice(0, 80)
+    let query = supabase.from('profiles')
       .select('id,full_name,username,city,interests,avatar_url,bio')
       .neq('id', profile.id)
       .eq('onboarding_complete', true)
       .order('created_at', { ascending: false })
+    if (q) {
+      query = query.or(
+        `full_name.ilike.%${q}%,username.ilike.%${q}%,city.ilike.%${q}%,bio.ilike.%${q}%`,
+      )
+    }
+    if (selectedInterest) {
+      query = query.contains('interests', [selectedInterest])
+    }
     const { data, error } = await query.range(from, to)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Discover') || 'Failed to load people')
@@ -340,7 +364,7 @@ export default function Discover({ profile }: DiscoverProps) {
           </div>
         )}
 
-        {!loading && filtered.length > 0 && hasMore && !search && !selectedInterest && (
+        {!loading && filtered.length > 0 && hasMore && (
           <div style={{ textAlign: 'center', marginTop: 20 }}>
             <button
               type="button"

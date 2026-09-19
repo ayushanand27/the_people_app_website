@@ -2,17 +2,37 @@ const RESET_KEY = 'peopleapp_password_reset_pending'
 const GOOGLE_OAUTH_KEY = 'peopleapp_google_oauth_pending'
 const RESET_TTL_MS = 60 * 60 * 1000 // 1 hour
 
+function storageGet(store: Storage, key: string): string | null {
+  try {
+    return store.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function storageSet(store: Storage, key: string, value: string): void {
+  try {
+    store.setItem(key, value)
+  } catch { /* private mode / blocked storage */ }
+}
+
+function storageRemove(store: Storage, key: string): void {
+  try {
+    store.removeItem(key)
+  } catch { /* ignore */ }
+}
+
 /** localStorage survives Gmail in-app browser better than sessionStorage */
 export function markPasswordResetPending(): void {
-  localStorage.setItem(RESET_KEY, String(Date.now()))
+  storageSet(localStorage, RESET_KEY, String(Date.now()))
 }
 
 export function clearPasswordResetPending(): void {
-  localStorage.removeItem(RESET_KEY)
+  storageRemove(localStorage, RESET_KEY)
 }
 
 export function isPasswordResetPending(): boolean {
-  const ts = localStorage.getItem(RESET_KEY)
+  const ts = storageGet(localStorage, RESET_KEY)
   if (!ts) return false
   if (Date.now() - Number(ts) > RESET_TTL_MS) {
     clearPasswordResetPending()
@@ -22,15 +42,15 @@ export function isPasswordResetPending(): boolean {
 }
 
 export function markGoogleOAuthPending(): void {
-  sessionStorage.setItem(GOOGLE_OAUTH_KEY, '1')
+  storageSet(sessionStorage, GOOGLE_OAUTH_KEY, '1')
 }
 
 export function clearGoogleOAuthPending(): void {
-  sessionStorage.removeItem(GOOGLE_OAUTH_KEY)
+  storageRemove(sessionStorage, GOOGLE_OAUTH_KEY)
 }
 
 export function isGoogleOAuthPending(): boolean {
-  return sessionStorage.getItem(GOOGLE_OAUTH_KEY) === '1'
+  return storageGet(sessionStorage, GOOGLE_OAUTH_KEY) === '1'
 }
 
 function hasAuthCallbackInUrl(): boolean {
