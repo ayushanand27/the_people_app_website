@@ -57,6 +57,14 @@ describe('google oauth pending flag', () => {
     clearGoogleOAuthPending()
     expect(isGoogleOAuthPending()).toBe(false)
   })
+
+  it('does not throw when sessionStorage is unavailable', () => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+    expect(() => markGoogleOAuthPending()).not.toThrow()
+    spy.mockRestore()
+  })
 })
 
 describe('redirectRecoveryToResetPage', () => {
