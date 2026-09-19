@@ -28,6 +28,9 @@ function chain(result) {
     single: () => Promise.resolve(result),
     maybeSingle: () => Promise.resolve(result),
     then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
+    contains: () => builder,
+    range: () => Promise.resolve(result),
+    upsert: () => builder,
   }
   return builder
 }
@@ -189,5 +192,12 @@ describe('App routing and auth guards', () => {
     render(<App />)
     signedOut()
     await waitFor(() => expect(screen.getByText(/Welcome back/)).toBeInTheDocument())
+  })
+
+  it('shows a not-found page for unknown routes instead of a blank screen', async () => {
+    setUrl('/this-does-not-exist')
+    render(<App />)
+    await waitFor(() => expect(screen.getByText(/Page not found/)).toBeInTheDocument())
+    expect(screen.getByText(/Back to home/)).toBeInTheDocument()
   })
 })

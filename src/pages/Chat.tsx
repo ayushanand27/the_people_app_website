@@ -73,19 +73,24 @@ export default function Chat({ profile }: ChatProps) {
     setLoading(true)
     const blockedIds = await getBlockedIds(profile.id)
     const { data, error } = await supabase.from('messages')
-      .select('sender_id, receiver_id')
+      .select('sender_id, receiver_id, created_at')
       .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
+      .order('created_at', { ascending: false })
+      .limit(500)
     if (error) {
       setLoadError(reportSupabaseError(error, 'Chat conversations') || 'Failed to load conversations')
       setLoading(false)
       return
     }
     if (!data) { setLoading(false); return }
-    const ids = [...new Set(
-      data
-        .map(m => m.sender_id === profile.id ? m.receiver_id : m.sender_id)
-        .filter(id => !blockedIds.includes(id))
-    )]
+    const ids: string[] = []
+    const seen = new Set<string>()
+    for (const m of data) {
+      const other = m.sender_id === profile.id ? m.receiver_id : m.sender_id
+      if (!other || blockedIds.includes(other) || seen.has(other)) continue
+      seen.add(other)
+      ids.push(other)
+    }
     if (ids.length === 0) { setConversations([]); setLoading(false); return }
     const { data: profiles, error: profileError } = await supabase.from('profiles')
       .select('id,full_name,username,city').in('id', ids)
@@ -94,7 +99,10 @@ export default function Chat({ profile }: ChatProps) {
       setLoading(false)
       return
     }
-    setConversations(profiles || [])
+    const order = new Map(ids.map((id, i) => [id, i]))
+    setConversations(
+      [...(profiles || [])].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)),
+    )
     setLoading(false)
   }
 

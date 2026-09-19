@@ -59,7 +59,9 @@ export default function Auth() {
       if (error) setMessage(friendlyAuthError(error.message))
       else {
         if (data.user?.id) track('signup', { user_id: data.user.id })
-        setMessage('Check your email to confirm your account!')
+        if (!data.session) {
+          setMessage('Check your email to confirm your account!')
+        }
       }
     }
 
@@ -234,7 +236,9 @@ export default function Auth() {
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 placeholder="Password 🔒"
                 value={password} onChange={e => setPassword(e.target.value)}
-                required style={inputStyle}
+                required
+                minLength={mode === 'signup' ? 6 : undefined}
+                style={inputStyle}
               />
 
               {mode === 'login' && (
